@@ -1,0 +1,94 @@
+# -------------------------------------------------------
+# 🧠 General System Files
+# -------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.log
+logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+
+# -------------------------------------------------------
+# 🗂️ Environment Files (Never Commit Secrets)
+# -------------------------------------------------------
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# -------------------------------------------------------
+# ⚙️ Node.js Backend (server)
+# -------------------------------------------------------
+server/node_modules/
+server/dist/
+server/build/
+server/.env
+server/.env.local
+server/uploads/
+server/logs/
+server/tmp/
+server/coverage/
+server/.nyc_output/
+server/package-lock.json
+
+# -------------------------------------------------------
+# ⚛️ React Frontend (client)
+# -------------------------------------------------------
+client/node_modules/
+client/build/
+client/.env
+client/.env.local
+client/.next/
+client/.cache/
+client/coverage/
+
+# -------------------------------------------------------
+# 🧩 Editor / IDE Settings
+# -------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# -------------------------------------------------------
+# 🐳 Docker (if used)
+# -------------------------------------------------------
+docker-compose.override.yml
+docker-compose.local.yml
+.dockerignore
+
+# -------------------------------------------------------
+# 🔥 Testing / Coverage
+# -------------------------------------------------------
+coverage/
+jest-coverage/
+cypress/videos/
+cypress/screenshots/
+
+# -------------------------------------------------------
+# 🧰 OS Generated Files
+# -------------------------------------------------------
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# -------------------------------------------------------
+# 🚀 Build Artifacts (Optional)
+# -------------------------------------------------------
+*.tgz
+*.zip
+*.tar.gz
+
+# -------------------------------------------------------
+# 💾 Misc
+# -------------------------------------------------------
+*.pid
+*.seed
+*.pid.lock
+*.sqlite
+*.sqlite3
