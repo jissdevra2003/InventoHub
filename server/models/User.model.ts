@@ -5,14 +5,14 @@ export type UserRole = "admin" | "manager" | "staff";
 //IUser interface represents the TypeScript type of one MongoDB user record.
 export interface IUser extends Document 
 {
-    username:string,
-    name:string,
-    email:string,
+    username:string;
+    name:string;
+    email:string;
     password: string;
   role: UserRole;
   owned_shops?: Types.ObjectId[];
   shop_id?: Types.ObjectId | null;
-  phone_number?: string;
+  contact_number?: string;
   profile_image?: string;
   is_active: boolean;
   last_login?: Date;
@@ -20,6 +20,7 @@ export interface IUser extends Document
   updatedAt?: Date;
 }
 
+//defining the user document schema
 const userSchema = new mongoose.Schema(
 
 {
@@ -77,7 +78,7 @@ ref:"Shop",
 default:null,
 
 },
-phone_number:{
+contact_number:{
 type:String,
 trim:true
 
