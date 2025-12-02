@@ -66,7 +66,7 @@ owned_shops:
 {
 type:mongoose.Schema.Types.ObjectId,
 //ref: "Shop" → these ObjectIds refer to documents in the Shop collection
-ref:"Shop"
+ref:"Shop"   
 
 }
 ],
