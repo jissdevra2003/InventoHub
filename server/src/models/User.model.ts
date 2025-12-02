@@ -1,17 +1,23 @@
-import mongoose, {Document,Schema,Types} from 'mongoose';
+import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export type UserRole = "admin" | "manager" | "staff";
 
-//IUser interface represents the TypeScript type of one MongoDB user record.
-export interface IUser extends Document 
-{
-    username:string;
-    name:string;
-    email:string;
-    password: string;
-  role: UserRole;
-  owned_shops?: Types.ObjectId[];
-  shop_id?: Types.ObjectId | null;
+// TypeScript interface for one User document
+export interface IUser extends Document {
+  username: string;
+  marketId: Types.ObjectId;
+  name: string;
+  email: string;
+  password: string;
+  customRole?: string | null;
+  builtInRole?: UserRole | null;
+  permissions?: string[];
+  isSuperAdmin: boolean;
+  address?: string;
+  reset_token?: string;
+  reset_token_expiry?: Date;
+// owned_shops?: Types.ObjectId[];
+  assignedShop_id?: Types.ObjectId | null;
   contact_number?: string;
   profile_image?: string;
   is_active: boolean;
@@ -20,112 +26,110 @@ export interface IUser extends Document
   updatedAt?: Date;
 }
 
-//defining the user document schema
-const userSchema = new mongoose.Schema(
+const userSchema = new Schema<IUser>(
+  {
+    username: {
+      type: String,
+      unique: true,
+      required: true,
+      trim: true,
+    },
 
-{
-username:{
-type:String,
-unique:true,
-required:true,
-trim:true
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-},
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+        },
+    
+    marketId: {
+        type: Schema.Types.ObjectId,
+        ref: "Market",
+        required: true,       
+     },
 
-name:{
-    type:String,
-    required:true,
-    trim:true
-},
-email:{
-type:String,
-required:true,
-unique:true,
-lowercase:true,
-trim:true
+    password: {
+      type: String,
+      required: true,
+    },
 
-},
+    customRole: {
+        type: String,
+    },
 
-password:{
-type:String,
-required:true
+    builtInRole: {
+      type: String,
+      enum: ["admin", "manager", "staff"],
+      default: "staff",
+    },
 
-},
+    permissions: {
+      type: [String],
+      default: [],
+        },
+    
+    isSuperAdmin: {
+        type: Boolean,
+        default: false,
+        },
 
-role:{
-    type:String,
-    enum:["admin","manager","staff"],
-    default:"staff"
-},
+    // Admin: list of owned shops
+    // owned_shops: [
+    //   {
+    //     type: Schema.Types.ObjectId,
+    //     ref: "Shop",
+    //   },
+    // ],
 
-//List of shops owned (only for admins)
-//“owned_shops is an ARRAY, and each item inside the array is an ObjectId that refers to a Shop.”
-//owned_shops: [ ... ]
-owned_shops:
-[
-{
-type:mongoose.Schema.Types.ObjectId,
-//ref: "Shop" → these ObjectIds refer to documents in the Shop collection
-ref:"Shop"
+    // Manager / Staff: assigned shop
+    assignedShop_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Shop",
+      default: null,
+    },
 
-}
-],
+    contact_number: {
+      type: String,
+      trim: true,
+    },
 
-//The shop user works in (for managers/staff)
-shop_id:{
-type:mongoose.Schema.Types.ObjectId,
-ref:"Shop",
-default:null,
+    address: {
+      type: String,
+    },
 
-},
-contact_number:{
-type:String,
-trim:true
+    reset_token: {
+      type: String,
+    },
 
-},
+    reset_token_expiry: {
+      type: Date,
+    },
 
-address:{
-type:String
+    profile_image: {
+      type: String,
+      trim: true,
+    },
 
-},
+    is_active: {
+      type: Boolean,
+      default: true,
+    },
 
-reset_token:{
-type:String
-
-},
-reset_token_expiry:{
-type:Date
-
-},
-profile_image:{
-type:String,
-trim:true
-
-},
-is_active:{
-type:Boolean,
-default:true
-},
-
-last_login:{
-type:Date
-
-},
-
-
-
-},
-{
-
-    timestamps:true
-}
-
+    last_login: {
+      type: Date,
+    },
+  },
+  {
+    timestamps: true, // createdAt + updatedAt
+  }
 );
 
-//This line creates a User model in Mongoose,
-// "User" → is the collection name (Mongoose will actually use "users" in MongoDB — it automatically pluralizes it).
-
-// userSchema → defines what each document (record) looks like.
-
-// <IUser> → tells TypeScript that this model uses the IUser interface for type safety.
-export const User=mongoose.model<IUser>("User",userSchema);
+// Export model
+export const User = mongoose.models.User || mongoose.model<IUser>("User", userSchema);

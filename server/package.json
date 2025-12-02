@@ -15,8 +15,8 @@
     "prestart": "npm run build",
     "start": "node dist/server.js",
 
-     "start:dev": "ts-node-dev --respawn --transpile-only src/server.ts"
-
+    "start:dev": "ts-node-dev --respawn --transpile-only src/server.ts"
+    
   },
   "keywords": [],
   "author": "",
@@ -32,7 +32,8 @@
     "mongoose": "^8.19.3",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
-    "rimraf": "^6.1.2"
+    "rimraf": "^6.1.2",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
@@ -42,7 +43,6 @@
     "concurrently": "^9.2.1",
     "nodemon": "^3.1.11",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.9.3",
     "wait-on": "^9.0.3"
   }
 }
