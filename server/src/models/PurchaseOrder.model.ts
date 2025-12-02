@@ -11,7 +11,7 @@ export interface IPurchaseItem {
 }
 
 export interface IPurchaseOrder extends Document {
-  organization_id: Types.ObjectId;
+  market_id: Types.ObjectId;
   shop_id: Types.ObjectId;
   supplier_id: Types.ObjectId;
     items: IPurchaseItem[];
@@ -59,9 +59,9 @@ quantity: { type: Number,
 
 const PurchaseOrderSchema=new Schema<IPurchaseOrder>(
   {
-organization_id:{
+market_id:{
 type:Schema.Types.ObjectId,
-ref:"Organization",
+ref:"Market",
 required:true
 
 },

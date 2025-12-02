@@ -16,7 +16,6 @@ export interface IUser extends Document {
   address?: string;
   reset_token?: string;
   reset_token_expiry?: Date;
-// owned_shops?: Types.ObjectId[];
   assignedShop_id?: Types.ObjectId | null;
   contact_number?: string;
   profile_image?: string;
@@ -79,14 +78,6 @@ const userSchema = new Schema<IUser>(
         type: Boolean,
         default: false,
         },
-
-    // Admin: list of owned shops
-    // owned_shops: [
-    //   {
-    //     type: Schema.Types.ObjectId,
-    //     ref: "Shop",
-    //   },
-    // ],
 
     // Manager / Staff: assigned shop
     assignedShop_id: {
