@@ -12,6 +12,8 @@ export interface IPurchaseItem {
 
 export interface IPurchaseOrder extends Document {
   market_id: Types.ObjectId;
+  purchase_number:string
+  count:number
   shop_id: Types.ObjectId;
   supplier_id: Types.ObjectId;
     items: IPurchaseItem[];
@@ -23,7 +25,7 @@ export interface IPurchaseOrder extends Document {
   updatedAt?: Date;
 }
 
-const PurchaseItemSchema=new Schema<IPurchaseItem>(
+const purchaseItemSchema=new Schema<IPurchaseItem>(
 {
 product_id:{
 type:Schema.Types.ObjectId,
@@ -57,7 +59,7 @@ quantity: { type: Number,
 )
 
 
-const PurchaseOrderSchema=new Schema<IPurchaseOrder>(
+const purchaseOrderSchema=new Schema<IPurchaseOrder>(
   {
 market_id:{
 type:Schema.Types.ObjectId,
@@ -65,6 +67,20 @@ ref:"Market",
 required:true
 
 },
+purchase_number:{       //PO-00001 (purchase number)
+  type:String,
+  required:true,
+  unique:true,
+  index:true,
+  trim:true
+
+},
+
+// internal counter for making PO-00001, PO-00002...
+count: { type: Number, default: 0 },
+
+  
+
 shop_id:{
 type:Schema.Types.ObjectId,
 ref:"Shop"
@@ -74,7 +90,7 @@ supplier_id:{
   ref:"Supplier",
   required:true
 },
-items: { type: [PurchaseItemSchema],
+items: { type: [purchaseItemSchema],
    required: true,
     default: [] 
   },
@@ -104,4 +120,4 @@ items: { type: [PurchaseItemSchema],
 
 );
 
-export const PurchaseOrder=mongoose.model<IPurchaseOrder>("PurchaseOrder",PurchaseOrderSchema);
+export const PurchaseOrder=mongoose.model<IPurchaseOrder>("PurchaseOrder",purchaseOrderSchema);

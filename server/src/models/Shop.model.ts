@@ -2,7 +2,8 @@ import mongoose, { Document, Schema, Types } from "mongoose";
 
 export interface IShop extends Document {
 name:string;
-shop_code?:string;
+shop_id?:string;
+market_id:Types.ObjectId
 owner_id:Types.ObjectId;
 managers:Types.ObjectId[];
 staff:Types.ObjectId[];
@@ -36,7 +37,73 @@ updatedAt:Date;
 }
 
 const shopSchema=new mongoose.Schema({
+name:{
+    type:String,
+    required:true,
+    trim:true
+},
+shop_id:{
+    type:String,
+    trim:true,
+    unique:true,
+    sparse:true
+},
 
+market_id:{
+type:Schema.Types.ObjectId,
+ref:"Market",
+required:true
+
+},
+
+// owner (typically a user with role 'owner' or 'admin')
+owner_id:{
+    type:Schema.Types.ObjectId,
+    ref:"User",
+    required:true,
+    index:true
+},
+// managers assigned to this shop
+managers:[
+    {
+    type:Schema.Types.ObjectId,
+    ref:"User"
+}
+],
+
+staff:[
+{
+    type:Schema.Types.ObjectId,
+    ref:"User"
+}
+
+],
+address: { type: String, trim: true },
+    city: { type: String, trim: true },
+    state: { type: String, trim: true },
+    country: { type: String, trim: true, default: "India" },
+    postal_code: { type: String, trim: true },
+
+    contact_number: { type: String, trim: true },
+    contact_email: { type: String, trim: true, lowercase: true },
+
+     // GeoJSON Point for location: [lng, lat]
+    location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number], // [lng, lat]
+        // don't set default here; when omitted, location can be null
+      },
+    },
+
+    isActive:{
+        type:Boolean,
+        default:true
+    }
 
 
 },
@@ -44,3 +111,6 @@ const shopSchema=new mongoose.Schema({
 timestamps:true
 }
 )
+
+//shop model 
+export const Shop=mongoose.models.Shop || mongoose.model<IShop>("Shop",shopSchema);
