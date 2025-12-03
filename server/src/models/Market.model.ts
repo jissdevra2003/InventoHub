@@ -5,7 +5,7 @@ export type subscriptionPlanType = "free" | "basic" | "premium" | "enterprise";
 
 export interface IMarket extends Document {
     orgName: string;
-    ownerId?: Types.ObjectId;//may be optional innitially
+    ownerId?: Types.ObjectId;//may be optional initially
 
     logoUrl?: string;
     address?: string;
@@ -13,7 +13,7 @@ export interface IMarket extends Document {
     email: string;
 
     gstNumber?: string;
-    industryType?: string;
+    industryType?: string; // retail, wholesale, manufacturing etc. But for now just string
 
     country?: string;
     state?: string;
@@ -80,10 +80,10 @@ const marketSchema = new Schema<IMarket>({
     country: {
         type: String,
         trim: true
-    },  
+    },
     state: {
         type: String,
-        trim: true  
+        trim: true
     },
     city: {
         type: String,
@@ -123,7 +123,7 @@ const marketSchema = new Schema<IMarket>({
     },
 
 },
-    { timestamps: true })
+    { timestamps: true });
 
 //export market model
 export const Market = mongoose.models.Market || mongoose.model<IMarket>("Market", marketSchema);

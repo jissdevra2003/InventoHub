@@ -5,12 +5,12 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-  "clean": "rimraf dist",
-  "build": "npm run clean && npx tsc",
-  "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-  "start": "node dist/server.js",
-  "start:dev": "ts-node-dev --respawn --transpile-only src/server.ts"
-},
+    "clean": "rimraf dist",
+    "build": "npm run clean && npx tsc",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "start": "node dist/server.js",
+    "start:dev": "concurrently \"tsc --watch\" \"wait-on dist/server.js && nodemon dist/server.js\""
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -24,7 +24,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.3",
     "morgan": "^1.10.1",
-    "multer": "^2.0.2"
+    "multer": "^2.0.2",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
