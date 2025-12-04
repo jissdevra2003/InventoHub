@@ -2,7 +2,6 @@ import mongoose, { Document, Schema, Types } from "mongoose";
 
 export interface IShop extends Document {
 name:string;
-shop_id?:string;
 market_id:Types.ObjectId
 owner_id:Types.ObjectId;
 managers:Types.ObjectId[];
@@ -41,12 +40,6 @@ name:{
     type:String,
     required:true,
     trim:true
-},
-shop_id:{
-    type:String,
-    trim:true,
-    unique:true,
-    sparse:true
 },
 
 market_id:{
