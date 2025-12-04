@@ -4,7 +4,7 @@ export type subscriptionPlanType = "free" | "basic" | "premium" | "enterprise";
 
 
 export interface IMarket extends Document {
-    orgName: string;
+    name: string;
     ownerId?: Types.ObjectId;//may be optional innitially
 
     logoUrl?: string;
@@ -33,7 +33,7 @@ export interface IMarket extends Document {
 //market schema
 const marketSchema = new Schema<IMarket>({
 
-    orgName: {
+    name: {
         type: String,
         required: true,
         trim: true

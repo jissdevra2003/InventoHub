@@ -1,5 +1,7 @@
 import mongoose , {Document, Schema,Types} from 'mongoose'
 
+//The Product model holds global details (Name, SKU, Price, Description).
+
 export interface IProduct extends Document
 {
     market_id:Types.ObjectId;
@@ -23,9 +25,7 @@ export interface IProduct extends Document
 
   attributes?: Record<string, any>; // flexible key/value (size, color, etc.)
 
-  isActive: boolean;
-  created_by?: Types.ObjectId;
-  updated_by?: Types.ObjectId;
+  
 
   createdAt?: Date;
   updatedAt?: Date;
@@ -54,10 +54,9 @@ index:true
      image_urls: [{ type: String, trim: true }],
     attributes: { type: Schema.Types.Mixed },
 
-    isActive: { type: Boolean, default: true },
+   
 
-    created_by: { type: Schema.Types.ObjectId, ref: "User" },
-    updated_by: { type: Schema.Types.ObjectId, ref: "User" }
+   
 },
 {timestamps:true}
 
