@@ -4,7 +4,7 @@ export interface IInventory extends Document {
     market_id: Types.ObjectId;
     shop_id: Types.ObjectId;
     product_id: Types.ObjectId;
-    current_stock: number; //imp field 
+    quantity: number; //imp field 
     min_stock?: number; // alert when stock is below it
 
     createdAt?: Date;
@@ -34,7 +34,7 @@ const inventorySchema = new Schema<IInventory>({
         index: true
     },
 
-    current_stock: {
+    quantity: {
         type: Number,
         required: true,
         default: 0
