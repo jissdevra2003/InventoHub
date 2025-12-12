@@ -1,6 +1,7 @@
 import express from 'express';
 import {Express, Request, Response } from 'express';
 import dotenv from 'dotenv';
+import userRouter from './routes/user.route';
 import cors from 'cors';    
 
 dotenv.config();
@@ -11,6 +12,8 @@ const PORT: number = parseInt(process.env.PORT || '3000');
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use('/api/users', userRouter);
 
 app.get('/', (req: Request, res: Response ) => {
   res.send('<h1>Welcome to InventoHub Server your one place to manage all inventory tasks!</h1>');

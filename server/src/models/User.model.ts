@@ -5,8 +5,9 @@ export type UserRole = "admin" | "manager" | "staff";
 // TypeScript interface for one User document
 export interface IUser extends Document {
   username: string;
-  marketId: Types.ObjectId;
+  market_id: Types.ObjectId;
   name: string;
+  phone?: string;
   email: string;
   password: string;
   customRole?: string | null;
@@ -17,9 +18,8 @@ export interface IUser extends Document {
   reset_token?: string;
   reset_token_expiry?: Date;
   assignedShop_id?: Types.ObjectId | null;
-  contact_number?: string;
   profile_image?: string;
-  is_active: boolean;
+  isActive: boolean;
   last_login?: Date;
   createdAt?: Date;
   updatedAt?: Date;
@@ -40,6 +40,11 @@ const userSchema = new Schema<IUser>(
       trim: true,
     },
 
+    phone: {
+      type: String,
+      trim: true,
+    },
+
     email: {
       type: String,
       required: true,
@@ -48,7 +53,7 @@ const userSchema = new Schema<IUser>(
       trim: true,
         },
     
-    marketId: {
+    market_id: {
         type: Schema.Types.ObjectId,
         ref: "Market",
         required: true,       
@@ -86,11 +91,6 @@ const userSchema = new Schema<IUser>(
       default: null,
     },
 
-    contact_number: {
-      type: String,
-      trim: true,
-    },
-
     address: {
       type: String,
     },
@@ -108,7 +108,7 @@ const userSchema = new Schema<IUser>(
       trim: true,
     },
 
-    is_active: {
+    isActive: {
       type: Boolean,
       default: true,
     },

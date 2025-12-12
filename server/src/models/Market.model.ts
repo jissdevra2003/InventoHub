@@ -4,13 +4,13 @@ export type subscriptionPlanType = "free" | "basic" | "premium" | "enterprise";
 
 
 export interface IMarket extends Document {
-    name: string;
+    market_name: string;
     ownerId?: Types.ObjectId;//may be optional innitially
 
     logoUrl?: string;
     address?: string;
-    phone: string;
-    email: string;
+    market_phone: string;
+    market_email: string;
 
     gstNumber?: string;
     industryType?: string; // retail, wholesale, manufacturing etc. But for now just string
@@ -33,7 +33,7 @@ export interface IMarket extends Document {
 //market schema
 const marketSchema = new Schema<IMarket>({
 
-    name: {
+    market_name: {
         type: String,
         required: true,
         trim: true
@@ -54,13 +54,13 @@ const marketSchema = new Schema<IMarket>({
         trim: true
     },
 
-    phone: {
+   market_phone: {
         type: String,
         required: true,
         trim: true
     },
 
-    email: {
+    market_email: {
         type: String,
         required: true,
         trim: true,
