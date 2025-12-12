@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
+import bcrypt from 'bcryptjs'
 
 export type UserRole = "admin" | "manager" | "staff";
 
@@ -23,6 +24,8 @@ export interface IUser extends Document {
   last_login?: Date;
   createdAt?: Date;
   updatedAt?: Date;
+  //Instance methods 
+  comparePasswords(candidatePassword:string):Promise<boolean>;
 }
 
 const userSchema = new Schema<IUser>(
@@ -122,5 +125,21 @@ const userSchema = new Schema<IUser>(
   }
 );
 
+
+userSchema.pre('save',async function(next)
+{
+  // Only hash password if it has been modified
+   if (!this.isModified('password')) return next();
+    
+    const salt = await bcrypt.genSalt(12);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+})
+
+userSchema.methods.comparePasswords=async function(candidatePassword:string): Promise<boolean>
+{
+return bcrypt.compare(candidatePassword,this.password);
+
+}
 // Export model
 export const User = mongoose.models.User || mongoose.model<IUser>("User", userSchema);

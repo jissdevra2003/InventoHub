@@ -9,11 +9,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-<<<<<<< HEAD
 #package-lock.json
-=======
-# package-lock.json
->>>>>>> 67674774ba8d396123328e2ad7958fa069ac6486
 yarn.lock
 
 # -------------------------------------------------------
@@ -38,11 +34,7 @@ server/logs/
 server/tmp/
 server/coverage/
 server/.nyc_output/
-<<<<<<< HEAD
 #server/package-lock.json
-=======
-# server/package-lock.json
->>>>>>> 67674774ba8d396123328e2ad7958fa069ac6486
 
 # -------------------------------------------------------
 # ⚛️ React Frontend (client)
