@@ -8,6 +8,8 @@ import { ApiResponse } from '../utils/ApiResponse';
 import { registerValidator } from '../validators/user.validator';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import mongoose from 'mongoose';
+import { fi } from 'zod/v4/locales';
 
 
 const generateToken = (user_id: string, market_id: string ):string => {
@@ -29,7 +31,11 @@ export const Register = asyncHandler(async (req: Request, res: Response) => {
     //validate request body with help of zod validator
     const result = registerValidator.safeParse(req.body);
     if (!result.success) {
-        return res.status(400).json(new ApiError(400, "Validation Error"));
+        const errors = result.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message,
+        }))
+        throw new ApiError(400, `Validation Error: ${JSON.stringify(errors.map(e => e.field + ' => ' + e.message).join(', '))}`);
     }
 
 
@@ -40,61 +46,80 @@ export const Register = asyncHandler(async (req: Request, res: Response) => {
 
     //checks
     if (!owner || !market) {
-        return res.status(400).json(new ApiError(400, "Owner and Market information are required"));
+       throw new ApiError(400, "Owner and Market information are required");
     }
 
     //checks
-    const existingMarket = await Market.findOne({
-        $or: [
+    const [
+        existingUserName,
+        existingMarket,
+        existingUser
+        ] = await Promise.all([
+        User.findOne({ username: owner.username }),
+        Market.findOne({
+          $or: [
             { market_email: market.market_email },
             { market_phone: market.market_phone }
-        ]
-    });
-    if (existingMarket) {
-        return res.status(400).json(new ApiError(400, "Market with this email already exists"));
-    }
-
-    const existingUser = await User.findOne({
-        $or: [
+          ]
+        }),
+        User.findOne({
+          $or: [
             { email: owner.email },
             { phone: owner.phone }
-        ]
-    });
-    if (existingUser) {
-        return res.status(400).json(new ApiError(400, "User with this email or phone already exists"));
+          ]
+  })
+]);
+
+   
+   if (existingUserName) {
+       throw new ApiError(400, "Username already taken");
+   }
+
+    if (existingMarket) {
+        throw new ApiError(400, "Market with this email or phone number already exists");
     }
 
+    if (existingUser) {
+        throw new ApiError(400, "User with this email or phone already exists");
+    }
 
-    // create market and user in DB here
-    const marketObj = new Market({...market,isActive:true});
-    await marketObj.save();
     
-try {
-        
+    //START session 
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // create market and user in DB here
+         const [marketObj] = await Market.create([{...market,isActive:true}], { session });
+
+        console.time("userPasswordHashing");
         //remove this if pre hook is used in user model for hashing password
-        const saltRounds = Number(process.env.SALT_ROUNDS || 10);
+        const saltRounds = Number(process.env.SALT_ROUNDS || 8);
         const hashedPassword = await bcrypt.hash(owner.password, saltRounds);
         owner.password = hashedPassword;
+        console.timeEnd("userPasswordHashing");
     
-        const userObj = new User({
+        const [userObj] = await User.create([{
             ...owner,
             market_id: marketObj._id,
             isSuperAdmin: true,
             isActive: true,
             permissions: ['*'] // all permissions
-        });
-        await userObj.save();
+        }], { session });
+
+        //COMMIT transaction
+        await session.commitTransaction();
     
         const userData = await User.findById(userObj._id).select('-password -__v -createdAt -updatedAt').populate('market_id', 'market_name market_email market_phone');
     
         if (!userData) {
-            return res.status(500).json(new ApiError(500, "Failed to create user"));
+            throw new ApiError(500, "Failed to create user");
         }
     
         const marketData = await Market.findById(marketObj._id).select('-__v -createdAt -updatedAt');
     
         if (!marketData) {
-            return res.status(500).json(new ApiError(500, "Failed to create market"));
+            throw new ApiError(500, "Failed to create market");
         }
     
     const token = generateToken(userObj._id.toString(), marketObj._id.toString());
@@ -116,10 +141,14 @@ try {
             { userData, marketData }
         ));
 } catch (error) {
-    if(marketObj && marketObj._id){
-        await Market.findByIdAndDelete(marketObj._id);
+        //ABORT transaction , Auto rollback
+        await session.abortTransaction();
+        console.error("Error during registration:", error);
+
+        throw error instanceof ApiError ? error : new ApiError(500, "Internal Server Error");
     }
-    return res.status(500).json(new ApiError(500, "Internal Server Error"));
+    finally {
+        session.endSession();
     }
     
 });
