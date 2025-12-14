@@ -9,6 +9,7 @@ import { registerValidator } from '../validators/user.validator';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
+import crypto from 'crypto'
 import { fi } from 'zod/v4/locales';
 
 
@@ -90,6 +91,7 @@ export const Register = asyncHandler(async (req: Request, res: Response) => {
 
     try {
         // create market and user in DB here
+        //save the market and user data in DB and doing it inside the transaction
          const [marketObj] = await Market.create([{...market,isActive:true}], { session });
 
         console.time("userPasswordHashing");
@@ -98,18 +100,19 @@ export const Register = asyncHandler(async (req: Request, res: Response) => {
         const hashedPassword = await bcrypt.hash(owner.password, saltRounds);
         owner.password = hashedPassword;
         console.timeEnd("userPasswordHashing");
-    
+
+    //array here because mongoDB extracts an array
         const [userObj] = await User.create([{
             ...owner,
             market_id: marketObj._id,
             isSuperAdmin: true,
             isActive: true,
-            permissions: ['*'] // all permissions
+            permissions: ['*'] // all permissions as SuperAdmin
         }], { session });
 
-        //COMMIT transaction
+        //COMMIT transaction   ,   save changes to the DB
         await session.commitTransaction();
-    
+                                                                                                        
         const userData = await User.findById(userObj._id).select('-password -__v -createdAt -updatedAt').populate('market_id', 'market_name market_email market_phone');
     
         if (!userData) {
@@ -152,3 +155,143 @@ export const Register = asyncHandler(async (req: Request, res: Response) => {
     }
     
 });
+
+
+export const Login =asyncHandler(async (req:Request, res:Response)=>{
+
+
+    const {email,password}=req.body
+
+     if (!email || !password) {
+    throw new ApiError(400, "Email and password are required");
+  }
+
+  //find user by email and populate with market(organization details) in which organization the user works in 
+  const user= await User.findOne({email}).populate("market_id","market_name market_email");
+
+  if(!user)
+  {
+    throw new ApiError(401, "Invalid email or password");
+  }
+
+  if (!user.isActive) {
+    throw new ApiError(403, "User account is inactive");
+  }
+
+  if (user.status !== "active") {
+    throw new ApiError(403, "Please accept invitation before logging in");
+  }
+
+  if (!user.password) {
+    throw new ApiError(401, "Password not set for this account");
+  }
+
+   const isMatch = user.comparePasswords(password)
+   if (!isMatch) {
+    throw new ApiError(401, "Invalid password");
+  }
+
+  const token=generateToken(
+user._id.toString(),
+user.market_id._id.toString()
+
+  )
+
+  return res
+    .status(200)
+    .cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    })
+    .json(
+      new ApiResponse(200, "Login successful", {
+        user: {
+          id: user._id,
+          email: user.email,
+          role: user.role
+        },
+        market: {
+          id: user.market_id._id,
+          name: user.market_id.market_name
+        }
+      })
+    );
+
+
+
+
+})
+
+export const Logout = asyncHandler(async (req:Request, res:Response)=>{
+
+    return res
+    .status(200)
+    .clearCookie("token",{
+        httpOnly:true,
+        secure:process.env.NODE_ENV==="production",
+        sameSite:"lax"
+    })
+    .json(new ApiResponse(200,"Logged out successfully"));
+})
+
+export const InviteUser=asyncHandler(async(req:Request, res:Response)=>{
+
+    const {email,role}=req.body
+
+    const loggedInUser=req.user;     //user added in auth.middleware
+    if(!loggedInUser)
+    {
+        throw new ApiError(400,"Unauthorized access");
+    }
+
+    if(!email || !role)
+    {
+        throw new ApiError(400,"Email and role are required");
+    }
+
+    if(!["manager","staff"].includes(role))
+    {
+        throw new ApiError(400,"Invalid role");
+    }
+
+    // Check if user already exists in this market
+  const existingUser = await User.findOne({
+    email,
+    market_id: loggedInUser.marketId
+  });
+
+  if (existingUser) {
+    throw new ApiError(400, "User already exists in this organization");
+  }
+
+  // Generate secure invite token
+  const inviteToken = crypto.randomBytes(32).toString("hex");
+
+  // Set expiry (48 hours)
+  const inviteExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
+  await User.create({
+email,
+role,
+market_Id:loggedInUser.marketId,
+status:"invited",
+invite_token:inviteToken,
+invite_expires:inviteExpires,
+isActive:true
+
+
+  })
+
+   // 6️⃣ Send invite email (for now just log link)
+  const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${inviteToken}`;
+
+   
+
+   return res.status(200).json(
+    new ApiResponse(200, "Invitation sent successfully")
+  );
+
+
+})

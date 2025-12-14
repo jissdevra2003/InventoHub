@@ -12,7 +12,8 @@ export const registerValidator = z.object({
 
   // Use Indian 10-digit validator:
   market_phone: z.string()
-    .regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
+  .regex(/^(?:\+91)?[6-9]\d{9}$/, "Phone number must be 10 digits (optionally prefixed with +91)"),
+
     // Simplified international format but also may need format eg +91XXXXXXXXXX for India
 
   gstNumber: z.string()
@@ -39,7 +40,7 @@ export const registerValidator = z.object({
     owner: z.object({
           username: z.string().regex(/^[a-zA-Z0-9_]{3,30}$/, "Username must be 3-30 characters long and can only contain letters, numbers, and underscores"),
           name: z.string().regex(/^[a-zA-Z\s]{3,30}$/, "Name must be 3-30 characters long and can only contain letters and spaces"),
-          phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format").optional(),
+          phone: z.string().regex(/^(?:\+91)?[6-9]\d{9}$/, "Phone number must be 10 digits (optionally prefixed with +91)"),
           email: z.email(),
           password: z.string().regex(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/, "Password must be at least 8 characters long and contain at least one letter and one number"),
           address: z.string().optional(),   

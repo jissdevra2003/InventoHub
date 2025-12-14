@@ -24,6 +24,9 @@ export interface IUser extends Document {
   last_login?: Date;
   createdAt?: Date;
   updatedAt?: Date;
+  status:"invited" | "active";
+  invite_token?:string
+  invite_expires?:Date;
   //Instance methods 
   comparePasswords(candidatePassword:string):Promise<boolean>;
 }
@@ -66,6 +69,11 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: true,
     },
+    status:{
+          type:String,
+          enum:["invited","active"],
+          default:"invited"
+        },
 
     customRole: {
         type: String,
@@ -80,6 +88,17 @@ const userSchema = new Schema<IUser>(
     permissions: {
       type: [String],
       default: [],
+        },
+
+        
+        invite_token:{
+          type:String,
+          default:null
+        },
+
+        invite_expires:{
+          type:Date,
+          default:null
         },
     
     isSuperAdmin: {
@@ -138,7 +157,7 @@ userSchema.pre('save',async function(next)
 
 userSchema.methods.comparePasswords=async function(candidatePassword:string): Promise<boolean>
 {
-return bcrypt.compare(candidatePassword,this.password);
+return await bcrypt.compare(candidatePassword,this.password);
 
 }
 // Export model
