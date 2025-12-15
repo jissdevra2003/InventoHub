@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
 import bcrypt from 'bcryptjs'
 
-export type UserRole = "admin" | "manager" | "staff";
+export type UserRole = "manager" | "staff";
 
 // TypeScript interface for one User document
 export interface IUser extends Document {
@@ -36,13 +36,17 @@ const userSchema = new Schema<IUser>(
     username: {
       type: String,
       unique: true,
-      required: true,
+      required: function (this: IUser): boolean {    //required only when status is "active"
+    return this.status === "active";
+  },
       trim: true,
     },
 
     name: {
       type: String,
-      required: true,
+     required: function (this: IUser): boolean {        //required only when status is "active"
+    return this.status === "active";
+  },
       trim: true,
     },
 
@@ -67,11 +71,14 @@ const userSchema = new Schema<IUser>(
 
     password: {
       type: String,
-      required: true,
+      required:function (this:IUser):boolean       //required only when status is "active"
+      {
+        return this.status==="active";
+      }
     },
     status:{
           type:String,
-          enum:["invited","active"],
+          enum:["invited","active","disabled"],
           default:"invited"
         },
 

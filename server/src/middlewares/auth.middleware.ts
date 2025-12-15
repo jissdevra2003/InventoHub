@@ -31,6 +31,7 @@ export const authMiddleware=asyncHandler(
 
          // Get token from cookie OR Authorization header
     if (req.cookies?.token) {
+      console.log("Cookie :"+req.cookies)
       token = req.cookies.token;
     } else if (
       req.headers.authorization &&

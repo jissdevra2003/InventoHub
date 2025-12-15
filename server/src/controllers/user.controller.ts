@@ -107,6 +107,7 @@ export const Register = asyncHandler(async (req: Request, res: Response) => {
             market_id: marketObj._id,
             isSuperAdmin: true,
             isActive: true,
+            status:"active",
             permissions: ['*'] // all permissions as SuperAdmin
         }], { session });
 
@@ -272,10 +273,12 @@ export const InviteUser=asyncHandler(async(req:Request, res:Response)=>{
   // Set expiry (48 hours)
   const inviteExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
+  //This code creates an invited user linked to the same organization as the SuperAdmin, 
+  // marks them as “invited”,  and stores a secure token so they can activate their account later.
   await User.create({
 email,
 role,
-market_Id:loggedInUser.marketId,
+market_id:loggedInUser.marketId,
 status:"invited",
 invite_token:inviteToken,
 invite_expires:inviteExpires,
@@ -284,7 +287,7 @@ isActive:true
 
   })
 
-   // 6️⃣ Send invite email (for now just log link)
+   //  Send invite email (for now just log link)
   const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${inviteToken}`;
 
    

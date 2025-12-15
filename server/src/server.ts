@@ -6,6 +6,7 @@ import { connectDB } from './config/db';
 import userRouter from './routes/user.route';
 import { globalErrorHandler } from './middlewares/globalErrorHandler.middleware';
 import { notFoundHandler } from './middlewares/globalErrorHandler.middleware';
+import cookieParser from "cookie-parser"
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ const PORT: number = Number(process.env.PORT) || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // ---------- ROUTES ----------
 app.use('/api/users', userRouter);
