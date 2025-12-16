@@ -11,7 +11,7 @@ declare global {
       user?: {
         userId: string;
         marketId: string;
-        role: string;
+        permissions: string[];
         isSuperAdmin:boolean
       };
     }
@@ -21,17 +21,16 @@ declare global {
 interface JwtPayload {
   user_id: string;
   market_id: string;
-  role?: string;
 }
 
-export const authMiddleware=asyncHandler(
-    
-    async(req:Request,res:Response,next:NextFunction)=>{
-        let token:string|undefined;
 
-         // Get token from cookie OR Authorization header
+  export const authMiddleware = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    let token: string | undefined;
+
+    // Get token from cookie OR Authorization header
     if (req.cookies?.token) {
-      console.log("Cookie :"+req.cookies)
+      console.log("Cookie :"+req.cookies.token);
       token = req.cookies.token;
     } else if (
       req.headers.authorization &&
@@ -40,21 +39,18 @@ export const authMiddleware=asyncHandler(
       token = req.headers.authorization.split(" ")[1];
     }
 
-     if (!token) {
+    if (!token) {
       throw new ApiError(401, "Authentication required");
     }
 
-      // Verify token
     if (!process.env.JWT_SECRET) {
       throw new ApiError(500, "JWT secret not configured");
     }
 
-     let decoded: JwtPayload;
+    let decoded: JwtPayload;
     try {
-
       decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload;
-
-    } catch (error) {
+    } catch {
       throw new ApiError(401, "Invalid or expired token");
     }
 
@@ -63,30 +59,34 @@ export const authMiddleware=asyncHandler(
     //decoded payload contains user_id and market_id
 
     //select will include only the specified fields in the data object 
-    const user=await User.findById(decoded.user_id).select("_id role status market_id isActive isSuperAdmin")
-    if(!user)
-    {
-        throw new ApiError(401,"User not found")
+    const user = await User.findById(decoded.user_id).select(
+      "_id market_id status isActive isSuperAdmin permissions"
+    );
+
+    if (!user) {
+      throw new ApiError(401, "User not found");
     }
 
-     if (!user.isActive) {
+    if (!user.isActive) {
       throw new ApiError(403, "User account is inactive");
+      }
+      
+    if (!user.status || user.status === "disabled") {
+      throw new ApiError(403, "User account is disabled");
     }
 
-     if (user.status !== "active") {
+    if (user.status !== "active") {
       throw new ApiError(403, "Please accept invitation before accessing");
     }
 
-    req.user={
-        userId:user._id.toString(),
-        marketId:user.market_id.toString(),
-        role:user.role,
-        isSuperAdmin:user.isSuperAdmin
-
+    req.user = {
+      userId: user._id.toString(),
+      marketId: user.market_id.toString(),
+      isSuperAdmin: user.isSuperAdmin,
+      permissions: user.permissions || [],
     };
 
     next();
+  }
+);
 
-    }
-
-)

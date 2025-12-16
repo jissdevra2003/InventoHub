@@ -24,7 +24,7 @@ export interface IUser extends Document {
   last_login?: Date;
   createdAt?: Date;
   updatedAt?: Date;
-  status:"invited" | "active";
+  status:"invited" | "active" | "disabled";
   invite_token?:string
   invite_expires?:Date;
   //Instance methods 
@@ -38,7 +38,8 @@ const userSchema = new Schema<IUser>(
       unique: true,
       required: function (this: IUser): boolean {    //required only when status is "active"
     return this.status === "active";
-  },
+      },
+      sparse:true,
       trim: true,
     },
 
@@ -89,7 +90,7 @@ const userSchema = new Schema<IUser>(
     builtInRole: {
       type: String,
       enum: ["admin", "manager", "staff"],
-      default: "staff",
+      // default: "staff",
     },
 
     permissions: {

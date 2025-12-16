@@ -6,11 +6,12 @@ import { registerDto } from '../dtos/user.dto';
 import { ApiError } from '../utils/ApiError';
 import { ApiResponse } from '../utils/ApiResponse';
 import { registerValidator } from '../validators/user.validator';
+import { ALL_PERMISSIONS } from '../permissions/main.perm';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import crypto from 'crypto'
-import { fi } from 'zod/v4/locales';
+
 
 
 const generateToken = (user_id: string, market_id: string ):string => {
@@ -25,6 +26,36 @@ const generateToken = (user_id: string, market_id: string ):string => {
     return token;
 }
 
+const validatePermissionsExist = (permissions: string[]): void => {
+    const invalidPermissions = permissions.filter(p => !ALL_PERMISSIONS.includes(p as any));
+
+    if (invalidPermissions.length > 0) {
+        throw new ApiError(400, `Invalid permissions: ${invalidPermissions.join(", ")}`);
+    }
+
+}
+
+const preventPermissionEscalation = (inviterPermissions: string[], toAssignPermissions: string[], isSuperAdmin: boolean): void => {
+    
+    //superadmin bypass
+    if (isSuperAdmin && inviterPermissions.includes('*')) {
+        return;
+    }
+
+    //1)check if inviter has perms to invite users
+    if (!inviterPermissions.includes("user:invite")) {
+        throw new ApiError(403, "You don't have user invitation permission");
+    }
+
+    //2)Permission escalation protection: ensure inviter has all permissions they are trying to assign
+    const invalid = toAssignPermissions.filter(p => !inviterPermissions.includes(p));
+
+    if (invalid.length > 0) {
+    throw new ApiError(403, `Cannot assign permissions you don't own: ${invalid.join(", ")}`);
+}
+};
+
+
 
  //--- FRONTEND: send object which contains owner and market object ---
 export const Register = asyncHandler(async (req: Request, res: Response) => {
@@ -36,7 +67,7 @@ export const Register = asyncHandler(async (req: Request, res: Response) => {
             field: issue.path.join('.'),
             message: issue.message,
         }))
-        throw new ApiError(400, `Validation Error: ${JSON.stringify(errors.map(e => e.field + ' => ' + e.message).join(', '))}`);
+        throw new ApiError(400, `Validation Error: ${errors.map(e => e.field + ' => ' + e.message).join(', ')}`);
     }
 
 
@@ -94,12 +125,12 @@ export const Register = asyncHandler(async (req: Request, res: Response) => {
         //save the market and user data in DB and doing it inside the transaction
          const [marketObj] = await Market.create([{...market,isActive:true}], { session });
 
-        console.time("userPasswordHashing");
-        //remove this if pre hook is used in user model for hashing password
-        const saltRounds = Number(process.env.SALT_ROUNDS || 8);
-        const hashedPassword = await bcrypt.hash(owner.password, saltRounds);
-        owner.password = hashedPassword;
-        console.timeEnd("userPasswordHashing");
+        // console.time("userPasswordHashing");
+        // //remove this if pre hook is used in user model for hashing password
+        // const saltRounds = Number(process.env.SALT_ROUNDS || 8);
+        // const hashedPassword = await bcrypt.hash(owner.password, saltRounds);
+        // owner.password = hashedPassword;
+        // console.timeEnd("userPasswordHashing");
 
     //array here because mongoDB extracts an array
         const [userObj] = await User.create([{
@@ -157,7 +188,6 @@ export const Register = asyncHandler(async (req: Request, res: Response) => {
     
 });
 
-
 export const Login =asyncHandler(async (req:Request, res:Response)=>{
 
 
@@ -172,7 +202,7 @@ export const Login =asyncHandler(async (req:Request, res:Response)=>{
 
   if(!user)
   {
-    throw new ApiError(401, "Invalid email or password");
+    throw new ApiError(401, "Invalid email address");
   }
 
   if (!user.isActive) {
@@ -187,7 +217,8 @@ export const Login =asyncHandler(async (req:Request, res:Response)=>{
     throw new ApiError(401, "Password not set for this account");
   }
 
-   const isMatch = user.comparePasswords(password)
+  //if await is not used here then it returns a pending promise. so if pass is correct or wrong still it will be a promise which will act as truthy value and user will be able to login incorrect password
+   const isMatch = await user.comparePasswords(password)
    if (!isMatch) {
     throw new ApiError(401, "Invalid password");
   }
@@ -237,30 +268,31 @@ export const Logout = asyncHandler(async (req:Request, res:Response)=>{
     .json(new ApiResponse(200,"Logged out successfully"));
 })
 
-export const InviteUser=asyncHandler(async(req:Request, res:Response)=>{
+export const InviteUser = asyncHandler(async(req:Request, res:Response)=>{
 
-    const {email,role}=req.body
+    const {email, permissions, role}=req.body
 
-    const loggedInUser=req.user;     //user added in auth.middleware
-    if(!loggedInUser)
+    const InviterUser = req.user;     //user added in auth.middleware
+    if(!InviterUser)
     {
         throw new ApiError(400,"Unauthorized access");
     }
 
-    if(!email || !role)
+    if(!email || !Array.isArray(permissions) ||  permissions.length===0 || !role)
     {
-        throw new ApiError(400,"Email and role are required");
+        throw new ApiError(400,"Email, permissions, and role are required");
     }
 
-    if(!["manager","staff"].includes(role))
-    {
-        throw new ApiError(400,"Invalid role");
-    }
+
+    //validate permissions
+    validatePermissionsExist(permissions);
+    //permission vaildator for INVITER :it cheacks if inviter has perms to invite users and also checks permission escalation
+    preventPermissionEscalation(InviterUser.permissions, permissions, InviterUser.isSuperAdmin);
 
     // Check if user already exists in this market
   const existingUser = await User.findOne({
     email,
-    market_id: loggedInUser.marketId
+    market_id: InviterUser.marketId
   });
 
   if (existingUser) {
@@ -276,16 +308,15 @@ export const InviteUser=asyncHandler(async(req:Request, res:Response)=>{
   //This code creates an invited user linked to the same organization as the SuperAdmin, 
   // marks them as “invited”,  and stores a secure token so they can activate their account later.
   await User.create({
-email,
-role,
-market_id:loggedInUser.marketId,
-status:"invited",
-invite_token:inviteToken,
-invite_expires:inviteExpires,
-isActive:true
-
-
-  })
+    email,
+    customRole:role,
+    permissions,
+    market_id: InviterUser.marketId,
+    status:"invited",
+    invite_token:inviteToken,
+    invite_expires: inviteExpires,
+    isActive:true
+  })//dont set password since pre hook will crash if password is undefined
 
    //  Send invite email (for now just log link)
   const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${inviteToken}`;
@@ -298,3 +329,51 @@ isActive:true
 
 
 })
+
+export const AcceptInvite = asyncHandler(async (req: Request, res: Response) => {
+
+    const { name, username, password, invite_token } = req.body;
+
+    if (!name || !username || !password ) {
+        throw new ApiError(400, "Name, username, password are required");
+    }
+
+    if (!invite_token) {
+        throw new ApiError(400, "Invite token is required");
+    }
+
+    // Find invited user by invite_token and expiry
+
+    const invitedUser = await User.findOne({
+        invite_token,
+        invite_expires: { $gt: new Date() } // token not expired
+    })
+    if (!invitedUser) {
+        throw new ApiError(400, "Invalid or expired invite token");
+    }
+
+    if (invitedUser.status !== "invited") {
+        throw new ApiError(400, "Invitation already used");
+    }
+
+    // Check if username is already taken
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+    throw new ApiError(400, "Username already taken");
+   }
+
+    //setpassword and username and status:active
+    invitedUser.status = "active";
+    invitedUser.isActive = true;
+    invitedUser.name = name;
+    invitedUser.username = username;
+    invitedUser.password = password;// hash auto by pre hook
+    //remove invite_token and expiry so user cannot use link more than one time
+    invitedUser.invite_token = null;
+    invitedUser.invite_expires = null;
+    await invitedUser.save();
+
+    res.status(200).json(new ApiResponse(200, "invitation Accepted Successfully! Login now."));
+    // in frontend after success:true then navigate: '/login' so user can login now
+
+});
