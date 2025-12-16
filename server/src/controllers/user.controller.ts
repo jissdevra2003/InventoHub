@@ -322,9 +322,9 @@ export const InviteUser = asyncHandler(async(req:Request, res:Response)=>{
   const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${inviteToken}`;
 
    
-
+  //Remove InviteToken and inviteLink from response after testing!!!!!
    return res.status(200).json(
-    new ApiResponse(200, "Invitation sent successfully")
+    new ApiResponse(200, "Invitation sent successfully", { inviteToken, inviteLink, note: "Remove inviteToken and inviteLink from response after testing!!!.For security  reasons" })
   );
 
 
