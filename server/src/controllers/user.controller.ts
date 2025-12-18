@@ -11,6 +11,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import crypto from 'crypto'
+import { Invite } from '../models/Invite.model';
 
 
 
@@ -58,7 +59,7 @@ const preventPermissionEscalation = (inviterPermissions: string[], toAssignPermi
 
 
  //--- FRONTEND: send object which contains owner and market object ---
-export const Register = asyncHandler(async (req: Request, res: Response) => {
+export const OwnerRegister = asyncHandler(async (req: Request, res: Response) => {
 
     //validate request body with help of zod validator
     const result = registerValidator.safeParse(req.body);
@@ -270,110 +271,127 @@ export const Logout = asyncHandler(async (req:Request, res:Response)=>{
 
 export const InviteUser = asyncHandler(async(req:Request, res:Response)=>{
 
-    const {email, permissions, role}=req.body
+    const {email,role,permissions}=req.body;
+    const inviter=req.user;   //authMiddleware added "req.user"
 
-    const InviterUser = req.user;     //user added in auth.middleware
-    if(!InviterUser)
+    if(!inviter)  throw new ApiError(401,"Unauthorized");
+
+    if(!email || !role || !Array.isArray(permissions) || permissions.length===0)
     {
-        throw new ApiError(400,"Unauthorized access");
+      throw new ApiError(400,"Email, role and permissions are required");
     }
 
-    if(!email || !Array.isArray(permissions) ||  permissions.length===0 || !role)
-    {
-        throw new ApiError(400,"Email, permissions, and role are required");
-    }
-
-
-    //validate permissions
-    validatePermissionsExist(permissions);
-    //permission vaildator for INVITER :it cheacks if inviter has perms to invite users and also checks permission escalation
-    preventPermissionEscalation(InviterUser.permissions, permissions, InviterUser.isSuperAdmin);
-
-    // Check if user already exists in this market
-  const existingUser = await User.findOne({
-    email,
-    market_id: InviterUser.marketId
-  });
-
-  if (existingUser) {
-    throw new ApiError(400, "User already exists in this organization");
-  }
-
-  // Generate secure invite token
-  const inviteToken = crypto.randomBytes(32).toString("hex");
-
-  // Set expiry (48 hours)
-  const inviteExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
-
-  //This code creates an invited user linked to the same organization as the SuperAdmin, 
-  // marks them as “invited”,  and stores a secure token so they can activate their account later.
-  await User.create({
-    email,
-    customRole:role,
+     validatePermissionsExist(permissions);
+  preventPermissionEscalation(
+    inviter.permissions,
     permissions,
-    market_id: InviterUser.marketId,
-    status:"invited",
-    invite_token:inviteToken,
-    invite_expires: inviteExpires,
-    isActive:true
-  })//dont set password since pre hook will crash if password is undefined
-
-   //  Send invite email (for now just log link)
-  const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${inviteToken}`;
-
-   
-  //Remove InviteToken and inviteLink from response after testing!!!!!
-   return res.status(200).json(
-    new ApiResponse(200, "Invitation sent successfully", { inviteToken, inviteLink, note: "Remove inviteToken and inviteLink from response after testing!!!.For security  reasons" })
+    inviter.isSuperAdmin
   );
 
+    const userExists=await User.findOne({
+      email,
+      market_id:inviter.marketId
+    })
 
-})
+    if(userExists) throw new ApiError(400,"User already exists");
+    
+    //check if active invite already exists
+    const inviteExists=await Invite.findOne({
+      email,
+      market_id:inviter.marketId,
+      status:"invited"
+    });
+
+    if(inviteExists) throw new ApiError(400,"Invite already sent")
+
+      //for testing
+      const invite_token = "55550002"
+      //const invite_token = crypto.randomBytes(32).toString("hex");
+
+      await Invite.create({
+        email,
+        role,
+        permissions,
+        market_id:inviter.marketId,
+        invited_by:inviter.userId,
+        invite_token,
+        expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000),
+
+
+      })
+
+      const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${invite_token}`;
+
+  // sendEmail(inviteLink)
+
+  res.json(new ApiResponse(200, "Invitation sent successfully"));
+
+});
 
 export const AcceptInvite = asyncHandler(async (req: Request, res: Response) => {
 
-    const { name, username, password, invite_token } = req.body;
+  const { invite_token, name, username, password } = req.body;
 
-    if (!name || !username || !password ) {
-        throw new ApiError(400, "Name, username, password are required");
-    }
+  if (!invite_token || !name || !username || !password) {
+    throw new ApiError(400, "All fields are required");
+  }
 
-    if (!invite_token) {
-        throw new ApiError(400, "Invite token is required");
-    }
+  const invite = await Invite.findOne({
+    invite_token,
+    status: "invited",
+    expires_at: { $gt: new Date() },
+  });
 
-    // Find invited user by invite_token and expiry
+  if (!invite) {
+    throw new ApiError(400, "Invalid or expired invite");
+  }
 
-    const invitedUser = await User.findOne({
-        invite_token,
-        invite_expires: { $gt: new Date() } // token not expired
-    })
-    if (!invitedUser) {
-        throw new ApiError(400, "Invalid or expired invite token");
-    }
-
-    if (invitedUser.status !== "invited") {
-        throw new ApiError(400, "Invitation already used");
-    }
-
-    // Check if username is already taken
-    const existingUsername = await User.findOne({ username });
-    if (existingUsername) {
+   const usernameExists = await User.findOne({ username });
+  if (usernameExists) {
     throw new ApiError(400, "Username already taken");
-   }
+  }
 
-    //setpassword and username and status:active
-    invitedUser.status = "active";
-    invitedUser.isActive = true;
-    invitedUser.name = name;
-    invitedUser.username = username;
-    invitedUser.password = password;// hash auto by pre hook
-    //remove invite_token and expiry so user cannot use link more than one time
-    invitedUser.invite_token = null;
-    invitedUser.invite_expires = null;
-    await invitedUser.save();
+  await User.create({
+    email:invite.email,
+    name,
+    username,
+    password,
+    market_id:invite.market_id,
+    customRole:invite.role,
+    permissions:invite.permissions,
+    status:"active",
+    isActive:true,
+    isSuperAdmin:false
 
-    res.status(200).json(new ApiResponse(200, "invitation Accepted Successfully! Login now."));
-    // in frontend after success:true then navigate: '/login' so user can login now
+  })
 
+  invite.status="accepted"  
+  invite.expires_at = null;        
+  invite.accepted_at=new Date();
+  await invite.save();
+
+  res.json(new ApiResponse(200,"Invite accepted successfully"))
+    
+    
+
+});
+
+export const DeclineInvite = asyncHandler(async (req, res) => {
+  const { invite_token } = req.body;
+
+  const invite = await Invite.findOne({
+    invite_token,
+    status: "invited",
+  });
+
+  if (!invite) {
+    throw new ApiError(400, "Invalid invite");
+  }
+
+  invite.status = "declined";
+  invite.expires_at = null;
+  invite.declined_at = new Date();
+  await invite.save();
+
+  res.json(new ApiResponse(200, "Invitation declined"));
 });

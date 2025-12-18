@@ -25,8 +25,7 @@ export interface IUser extends Document {
   createdAt?: Date;
   updatedAt?: Date;
   status:"invited" | "active" | "disabled";
-  invite_token?:string
-  invite_expires?:Date;
+  
   //Instance methods 
   comparePasswords(candidatePassword:string):Promise<boolean>;
 }
@@ -99,15 +98,7 @@ const userSchema = new Schema<IUser>(
         },
 
         
-        invite_token:{
-          type:String,
-          default:null
-        },
-
-        invite_expires:{
-          type:Date,
-          default:null
-        },
+       
     
     isSuperAdmin: {
         type: Boolean,

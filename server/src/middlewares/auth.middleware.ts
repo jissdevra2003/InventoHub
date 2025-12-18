@@ -58,7 +58,8 @@ interface JwtPayload {
 
     //decoded payload contains user_id and market_id
 
-    //select will include only the specified fields in the data object 
+    //select will include only the specified fields in the data object  
+    //user permissions are also loaded here 
     const user = await User.findById(decoded.user_id).select(
       "_id market_id status isActive isSuperAdmin permissions"
     );
