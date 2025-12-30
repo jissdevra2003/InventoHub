@@ -3,10 +3,9 @@ import mongoose, { Document, Schema, Types } from "mongoose";
 export interface IShop extends Document {
 name:string;
 market_id:Types.ObjectId
-owner_id:Types.ObjectId;
 managers:Types.ObjectId[];
 staff:Types.ObjectId[];
-
+created_by:Types.ObjectId;
 address?:string;
 city?:string;
 state?:string;
@@ -48,14 +47,14 @@ ref:"Market",
 required:true
 
 },
+created_by:{
+type:Schema.Types.ObjectId,
+ref:"User",
+required:true
 
-// owner (typically a user with role 'owner' or 'admin')
-owner_id:{
-    type:Schema.Types.ObjectId,
-    ref:"User",
-    required:true,
-    index:true
 },
+
+
 // managers assigned to this shop
 managers:[
     {
@@ -104,6 +103,15 @@ address: { type: String, trim: true },
 timestamps:true
 }
 )
+
+//geo index for location queries
+shopSchema.index({location:"2dsphere"})
+
+// Prevent duplicate shop names per market
+//Same shop name allowed in different markets
+
+//Prevents duplicates inside one market
+shopSchema.index({market_id:1,name:1},{unique:true});
 
 //shop model 
 export const Shop=mongoose.models.Shop || mongoose.model<IShop>("Shop",shopSchema);

@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
 import bcrypt from 'bcryptjs'
 
-export type UserRole = "manager" | "staff";
+export type UserRole = "admin"|"manager" | "staff";
 
 // TypeScript interface for one User document
 export interface IUser extends Document {

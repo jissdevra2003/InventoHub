@@ -13,6 +13,7 @@ declare global {
         marketId: string;
         permissions: string[];
         isSuperAdmin:boolean
+        builtInRole:string
       };
     }
   }
@@ -84,6 +85,7 @@ interface JwtPayload {
       userId: user._id.toString(),
       marketId: user.market_id.toString(),
       isSuperAdmin: user.isSuperAdmin,
+      builtInRole:user.builtInRole,
       permissions: user.permissions || [],
     };
 

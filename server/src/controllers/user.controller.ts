@@ -269,6 +269,57 @@ export const Logout = asyncHandler(async (req:Request, res:Response)=>{
     .json(new ApiResponse(200,"Logged out successfully"));
 })
 
+
+export const GetUserProfile=asyncHandler(async (req:Request,res:Response)=>{
+
+  const userId=req.user?.userId
+  if(!userId)
+  {
+    throw new ApiError(401,"Unauthorized");
+  }
+
+  const user=await User.findById(userId).select("-password -reset_token -reset_token_expiry -__v").populate("market_id","market_name market_email")
+
+  if(!user)
+  {
+    throw new ApiError(404,"User not found")
+  }
+
+   if (user.status !== "active") {
+      throw new ApiError(
+        403,
+        "Please accept invitation before accessing your profile"
+      );
+    }
+
+
+    const responseData = {
+      user: {
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        status: user.status,
+        role: user.customRole || user.builtInRole,
+        permissions: user.permissions || [],
+        assignedShop_id: user.assignedShop_id,
+        profile_image: user.profile_image,
+        address: user.address,
+      },
+      market: user.market_id
+        ? {
+            id: (user.market_id as any)._id,
+            name: (user.market_id as any).market_name,
+            email: (user.market_id as any).market_email
+          }
+        : null,
+    };
+  return res.status(200)
+  .json(new ApiResponse(200,"User details fetched successfully",responseData));
+
+
+})
+
 export const InviteUser = asyncHandler(async(req:Request, res:Response)=>{
 
     const {email,role,permissions}=req.body;
@@ -311,7 +362,7 @@ export const InviteUser = asyncHandler(async(req:Request, res:Response)=>{
       await Invite.create({
         email,
         role,
-        permissions,
+        permissions,  
         market_id:inviter.marketId,
         invited_by:inviter.userId,
         invite_token,
