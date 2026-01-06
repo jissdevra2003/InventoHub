@@ -16,6 +16,7 @@ export interface IUser extends Document {
   permissions?: string[];
   isSuperAdmin: boolean;
   address?: string;
+  createdBy?:Types.ObjectId | null;
   reset_token?: string;
   reset_token_expiry?: Date;
   assignedShop_id?: Types.ObjectId | null;
@@ -114,6 +115,11 @@ const userSchema = new Schema<IUser>(
 
     address: {
       type: String,
+    },
+    createdBy:{
+      type:Schema.Types.ObjectId,
+      ref:"User",
+      default:null
     },
 
     reset_token: {

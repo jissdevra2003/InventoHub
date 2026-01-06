@@ -356,8 +356,8 @@ export const InviteUser = asyncHandler(async(req:Request, res:Response)=>{
     if(inviteExists) throw new ApiError(400,"Invite already sent")
 
       //for testing
-      const invite_token = "55550002"
-      //const invite_token = crypto.randomBytes(32).toString("hex");
+      //const invite_token = "55550002"
+      const invite_token = crypto.randomBytes(32).toString("hex");
 
       await Invite.create({
         email,
@@ -366,6 +366,7 @@ export const InviteUser = asyncHandler(async(req:Request, res:Response)=>{
         market_id:inviter.marketId,
         invited_by:inviter.userId,
         invite_token,
+        status:"invited",
         expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000),
 
 
@@ -410,9 +411,9 @@ export const AcceptInvite = asyncHandler(async (req: Request, res: Response) => 
     market_id:invite.market_id,
     customRole:invite.role,
     permissions:invite.permissions,
+    createdBy:invite.invited_by,      //who invited (admin/manager) 
     status:"active",
     isActive:true,
-    isSuperAdmin:false
 
   })
 
@@ -445,4 +446,103 @@ export const DeclineInvite = asyncHandler(async (req, res) => {
   await invite.save();
 
   res.json(new ApiResponse(200, "Invitation declined"));
+});
+
+export const ListUsers=asyncHandler(async(req:Request,res:Response)=>{
+   if (!req.user) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  const { page = "1",  role } = req.query;
+
+  //identify the page number 
+  const pageNumber=Math.max(parseInt(page as string,10),1);    //eg pageNumber=3
+
+  //how many records to skip identify using pageNumber
+  //pageNumber=3   skip=(3-1)*10
+  const skip=(pageNumber-1)*10;   // 10 here is the limit
+  
+  const limitNumber=10;   //fixed 10 number limit
+
+  const filter:any={
+    market_id:req.user.marketId
+  };
+
+  
+// ---------------------------
+  // Visibility rules
+  // ---------------------------
+  // Admin / SuperAdmin -> see all users in market
+  // Manager -> see only users created / invited by them
+
+  if(req.user.builtInRole==="manager")
+  {
+    filter.createdBy=req.user.userId
+  }
+
+    if (role) {
+    filter.$or = [
+      { builtInRole: role },
+      { customRole: role },
+    ];
+  }
+
+  //db query 
+  //running two queries at the same time 
+  //fetches user data and count of users based on filter
+
+  const [users,total]=await Promise.all([             //first value will be assigned to 'users' and second value to 'totals' 
+User.find(filter)
+.select("_id name username email phone status builtInRole customRole assignedShop_id createdAt")
+.populate("assignedShop_id","name")
+.sort({createdAt:-1})     //sort based on createdAt in descending order
+.skip(skip)               //skip this many number of records
+.limit(10)
+
+,
+
+User.countDocuments(filter)     //count the user documents that match the given filter
+  ]); 
+
+  const totalPages=Math.ceil(total/10);
+  const  from =total===0 ? 0 : skip+1;
+  const to= Math.min(skip+10 ,  total);
+
+  const pagination={
+    total,
+    page:pageNumber,
+    limit:10,
+    totalPages,
+    hasNextPage:pageNumber<totalPages,
+    hasPrevPage:pageNumber>1,
+    from,
+    to
+  };
+
+  const responseUsers = users.map((u) => ({
+    id: u._id,
+    name: u.name,
+    username: u.username,
+    email: u.email,
+    phone: u.phone,
+    status: u.status,
+    role: u.customRole || u.builtInRole,
+    assignedShop: u.assignedShop_id
+      ? {
+          id: (u.assignedShop_id as any)._id,
+          name: (u.assignedShop_id as any).name,
+        }
+      : null,
+    createdAt: u.createdAt,
+  }));
+
+  return res.status(200).json(
+
+    new ApiResponse(200,"Users fetched successfully",{
+      users:responseUsers,
+      pagination
+    })
+  );
+
+
 });

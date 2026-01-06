@@ -1,5 +1,5 @@
 import express from "express";
-import { DeclineInvite, InviteUser, Login, Logout, OwnerRegister,GetUserProfile } from "../controllers/user.controller";
+import { DeclineInvite, InviteUser, Login, Logout, OwnerRegister,GetUserProfile,ListUsers } from "../controllers/user.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { rbac } from "../middlewares/rbac.middleware";
 import { PERMISSIONS } from "../permissions/main.perm";
@@ -15,6 +15,7 @@ userRouter.post("/accept-invite", AcceptInvite);
 userRouter.post("/decline-invite",DeclineInvite);
 userRouter.post("/login",Login)
 userRouter.get("/me",authMiddleware,GetUserProfile)
+userRouter.get("/listUsers",authMiddleware,rbac(["user:read"]),ListUsers)
 //authMiddleware verifies the user’s identity, validates the JWT, checks account status, and attaches user info before allowing the logout controller to run.
 userRouter.post("/logout", authMiddleware, Logout)
 
