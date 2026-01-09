@@ -12,8 +12,8 @@ state?:string;
 country?:string;
 postal_code?:string;
 
-contact_number:string;
-contact_email:string;
+contact_number?:string;
+contact_email?:string;
 
 location?:{         //  "?" means optional field
 type:"Point";       //type: "Point" → This tells MongoDB this is a GeoJSON Point
@@ -34,7 +34,7 @@ updatedAt:Date;
 
 }
 
-const shopSchema=new mongoose.Schema({
+const shopSchema=new mongoose.Schema<IShop>({
 name:{
     type:String,
     required:true,
@@ -114,4 +114,4 @@ shopSchema.index({location:"2dsphere"})
 shopSchema.index({market_id:1,name:1},{unique:true});
 
 //shop model 
-export const Shop=mongoose.models.Shop || mongoose.model<IShop>("Shop",shopSchema);
+export const Shop = mongoose.models.Shop || mongoose.model<IShop>("Shop",shopSchema);

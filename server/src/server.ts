@@ -7,6 +7,7 @@ import userRouter from './routes/user.route';
 import { globalErrorHandler } from './middlewares/globalErrorHandler.middleware';
 import { notFoundHandler } from './middlewares/globalErrorHandler.middleware';
 import cookieParser from "cookie-parser"
+import shopRouter from './routes/shop.route';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use(cookieParser());
 
 // ---------- ROUTES ----------
 app.use('/api/users', userRouter);
+app.use('/api/shops', shopRouter);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('<h1>Welcome to InventoHub Server your one place to manage all inventory tasks!</h1>');
