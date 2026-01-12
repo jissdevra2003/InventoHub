@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import { connectDB } from './config/db';
 import userRouter from './routes/user.route';
+import productRouter from './routes/product.route';
 import { globalErrorHandler } from './middlewares/globalErrorHandler.middleware';
 import { notFoundHandler } from './middlewares/globalErrorHandler.middleware';
 import cookieParser from "cookie-parser"
@@ -21,6 +22,7 @@ app.use(cookieParser());
 
 // ---------- ROUTES ----------
 app.use('/api/users', userRouter);
+app.use('/api/products',productRouter)
 
 app.get('/', (req: Request, res: Response) => {
   res.send('<h1>Welcome to InventoHub Server your one place to manage all inventory tasks!</h1>');
