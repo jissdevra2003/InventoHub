@@ -68,7 +68,7 @@ export const OwnerRegister = asyncHandler(async (req: Request, res: Response) =>
             field: issue.path.join('.'),
             message: issue.message,
         }))
-        throw new ApiError(400, `Validation Error: ${errors.map(e => e.field + ' => ' + e.message).join(', ')}`);
+        throw new ApiError(400, `Validation Error: ${errors.map(e => e.field + ' => ' + e.message).join('; ')}`);
     }
 
 
