@@ -4,6 +4,7 @@ import {asyncHandler} from "../utils/asyncHandler"
 import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import { productCreateValidator } from "../validators/product.validator";
+import { createProductDto } from "../dtos/product.dto";
 
 
 
@@ -28,23 +29,10 @@ export const createProduct=asyncHandler(async (req:Request,res:Response)=>{
         throw new ApiError(400,`Validation error :${errors.map(e=>`${e.field}:${e.message}`).join(", ")}`);                                 
     }
 
-    const {
-        name,
-        sku,
-        description,
-        category,
-      unit,
-      barcode,
-      cost_price,
-      selling_price,
-      stock_quantity,
-      image_urls,
-      attributes,
-
-    }=result.data;
+    const data:createProductDto=result.data;
 
 
-    const existingProduct=await Product.findOne({sku,
+    const existingProduct=await Product.findOne({sku:data.sku.trim(),
 
         market_id:user.marketId
     });
@@ -61,17 +49,7 @@ export const createProduct=asyncHandler(async (req:Request,res:Response)=>{
     //create product and save in the database
     const product=await Product.create({
     market_id:user.marketId,
-    name,
-    sku,
-    description,
-    category,
-    unit,
-    barcode,
-    cost_price,
-    selling_price,
-    stock_quantity,
-    image_urls,
-    attributes
+    ...data
 
     });
 
@@ -94,6 +72,43 @@ export const createProduct=asyncHandler(async (req:Request,res:Response)=>{
             "Product created successfully",
             responseData
 
+        )
+    )
+})
+
+
+export const listProducts=asyncHandler(async(req:Request,res:Response)=>{
+
+
+    const user=req.user;
+    if(!user)
+    {
+        throw new ApiError(401,"Unauthorized");
+    }
+
+        // /api/products/skip=0&limit=20
+    const skip=Math.max(Number(req.query.skip) || 0,0);   //max of the two values 
+    const limit=Math.min(Number(req.query.limit) || 10,50);    //minimum of the two values
+
+
+    //fetch products from this market
+    const products=await Product.find({
+        market_id:user.marketId,
+        isActive:true
+    })
+    .select("name sku category unit selling_price stock_quantity createdAt")
+    .sort({createdAt:-1})    //sort in descending order
+    .skip(skip)
+    .limit(limit);
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,"Products retrieved successfully",
+            {
+                items:products,    //products array
+                hasMore:products.length===limit
+            }
         )
     )
 })

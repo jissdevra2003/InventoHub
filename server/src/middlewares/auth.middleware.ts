@@ -10,6 +10,7 @@ declare global {
     interface Request {
       user?: {
         userId: string;
+        email:string; 
         marketId: string;
         permissions: string[];
         isSuperAdmin:boolean
@@ -31,7 +32,7 @@ interface JwtPayload {
 
     // Get token from cookie OR Authorization header
     if (req.cookies?.token) {
-      console.log("Cookie :"+req.cookies.token);
+      
       token = req.cookies.token;
     } else if (
       req.headers.authorization &&
@@ -83,6 +84,7 @@ interface JwtPayload {
 
     req.user = {
       userId: user._id.toString(),
+      email:user.email.toString(),
       marketId: user.market_id.toString(),
       isSuperAdmin: user.isSuperAdmin,
       builtInRole:user.builtInRole,

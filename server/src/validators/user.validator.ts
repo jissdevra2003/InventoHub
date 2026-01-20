@@ -47,3 +47,37 @@ export const registerValidator = z.object({
           profile_image: z.url().optional()
     })
 });
+
+export const updateMeValidator = z.object({
+  name: z
+    .string()
+    .min(3, "Name must be at least 3 characters")
+    .optional(),
+
+  phone: z
+    .string()
+    .regex(/^(?:\+91)?[6-9]\d{9}$/, "Invalid phone number")
+    .optional(),
+
+  address: z.string().min(5, "Address too short").optional(),
+
+  profile_image: z.string().url("Invalid image URL").optional(),
+});
+
+
+export const adminUpdateUserValidator = z.object({
+  name: z.string().min(3).optional(),
+  phone: z
+    .string()
+    .regex(/^(?:\+91)?[6-9]\d{9}$/)
+    .optional(),
+  address: z.string().optional(),
+  profile_image: z.string().url().optional(),
+
+  customRole: z.string().optional(),
+  permissions: z.array(z.string()).optional(),
+
+  assignedShop_id: z.string().nullable().optional(),
+
+  status: z.enum(["active", "disabled"]).optional(),
+});

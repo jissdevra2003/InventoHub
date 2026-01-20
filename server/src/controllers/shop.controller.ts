@@ -29,7 +29,7 @@ export const createShop = asyncHandler(async (req: Request, res: Response) => {
 
     const { name, address, city, state, country, postal_code, contact_number, contact_email } = data;
 
-    //check if shop with same name exists in the market
+    //Same market cannot have two shops with the same name
     const existingShop = await Shop.findOne({
         market_id: req.user!.marketId,
         name: name.trim()

@@ -2,16 +2,18 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler';
 import { Market } from '../models/Market.model';
 import { User } from '../models/User.model';
-import { registerDto } from '../dtos/user.dto';
+import { AdminUpdateUserDto, registerDto, updateMyProfileDto } from '../dtos/user.dto';
 import { ApiError } from '../utils/ApiError';
 import { ApiResponse } from '../utils/ApiResponse';
-import { registerValidator } from '../validators/user.validator';
+import { adminUpdateUserValidator, registerValidator, updateMeValidator } from '../validators/user.validator';
 import { ALL_PERMISSIONS } from '../permissions/main.perm';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import crypto from 'crypto'
 import { Invite } from '../models/Invite.model';
+import { Shop } from '../models/Shop.model';
+import { canUpdateUser } from '../utils/userAccess';
 
 
 
@@ -545,4 +547,397 @@ User.countDocuments(filter)     //count the user documents that match the given 
   );
 
 
+});
+
+
+
+export const UpdateMyProfile=asyncHandler(async (req:Request,res:Response)=>{
+
+  //user authenticated
+  const loggedInUser = req.user;
+    if (!loggedInUser) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    const result = updateMeValidator.safeParse(req.body);
+
+     if (!result.success) {
+      const errors = result.error.issues.map(
+        err => `${err.path.join(".")}: ${err.message}`
+      );
+      throw new ApiError(400, `Validation error: ${errors.join(", ")}`);
+    }
+
+
+    const updatedData:updateMyProfileDto=result.data;
+
+     //  Prevent empty update
+    if (Object.keys(updatedData).length === 0) {
+      throw new ApiError(400, "No fields provided to update");
+    }
+
+    const updatedUser=await User.findByIdAndUpdate(
+      loggedInUser.userId,
+      {$set:updatedData},
+      {new:true}
+    ).select(
+      "_id name email phone address profile_image builtInRole createdAt")
+
+      if(!updatedUser)
+      {
+        throw new ApiError(404,"User not found")  
+      }
+
+       return res.status(200).json(
+      new ApiResponse(200, "Profile details updated successfully", {
+        user: updatedUser,
+      })
+    );
+
+
+})
+
+
+export const DisableUser=asyncHandler(async (req:Request,res:Response)=>{
+
+const loggedInUser = req.user;
+    if (!loggedInUser) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    const { userId } = req.params;
+
+    //Prevent self-disable
+    if (loggedInUser.userId === userId) {
+      throw new ApiError(400, "You cannot disable your own account");
+    }
+
+    const userToDisable = await User.findById(userId);
+
+    if (!userToDisable) {
+      throw new ApiError(404, "User not found");
+    }
+  
+    // Must belong to same market
+    if (userToDisable.market_id.toString() !== loggedInUser.marketId) {
+      throw new ApiError(403, "Access denied");
+    }
+
+      // Manager visibility rule (manager can disable user that they have invited only)
+    if (
+      loggedInUser.builtInRole === "manager" &&
+      userToDisable.createdBy?.toString() !== loggedInUser.userId
+    ) {
+      throw new ApiError(403, "You can disable only users created/invited by you");
+    }
+
+
+    // Already disabled?
+    if (userToDisable.status === "disabled") {
+      throw new ApiError(400, "User is already disabled");
+    }
+
+    userToDisable.isActive=false;
+    userToDisable.status="disabled";
+
+    await userToDisable.save();
+
+    return res.status(200).json(
+      new ApiResponse(200, "User disabled successfully")
+    );
+})
+
+
+export const EnableUser=asyncHandler(
+  async(req:Request,res:Response)=>{
+const loggedInUser = req.user;
+    if (!loggedInUser) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    const { userId } = req.params;
+
+    const userToEnable = await User.findById(userId);
+
+    if (!userToEnable) {
+      throw new ApiError(404, "User not found");
+    }
+
+    if (userToEnable.market_id.toString() !== loggedInUser.marketId) {
+      throw new ApiError(403, "Access denied");
+    }
+
+    // Manager visibility rule
+    if (
+      loggedInUser.builtInRole === "manager" &&
+      userToEnable.createdBy?.toString() !== loggedInUser.userId
+    ) {
+      throw new ApiError(403, "You can enable only users created/invited by you");
+    }
+
+    if (userToEnable.status !== "disabled") {
+      throw new ApiError(400, "User is not disabled");
+    }
+
+    userToEnable.isActive = true;
+    userToEnable.status = "active";
+    await userToEnable.save();
+
+    return res.status(200).json(
+      new ApiResponse(200, "User enabled successfully")
+    );
+
+})
+
+
+export const updateUserById = asyncHandler(async (req: Request, res: Response) => {
+  const loggedInUser = req.user;
+  const {targetUserId}=req.params;
+  const { updates } = req.body as {
+    updates: AdminUpdateUserDto;
+  };
+
+  if (!loggedInUser) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  if (!targetUserId || !updates) {
+    throw new ApiError(400, "Target userId and update data are required");
+  }
+
+  // Prevent self-update
+  if (loggedInUser.userId === targetUserId) {
+    throw new ApiError(400, "Use /users/me to update your profile");
+  }
+
+  // Validate targetUserId is a valid MongoDB ObjectId
+  if (!mongoose.Types.ObjectId.isValid(targetUserId)) {
+    throw new ApiError(400, "Invalid user ID format");
+  }
+
+  // VALIDATE UPDATES DTO
+  const validationResult = adminUpdateUserValidator.safeParse(updates);
+  if (!validationResult.success) {
+    const errors = validationResult.error.issues.map(
+      err => `${err.path.join(".")}: ${err.message}`
+    );
+    throw new ApiError(400, `Validation error: ${errors.join(", ")}`);
+  }
+
+  // Prevent empty update
+  if (Object.keys(updates).length === 0) {
+    throw new ApiError(400, "No fields provided to update");
+  }
+
+  // 1. Find target user (market isolation)
+  const targetUser = await User.findOne({
+    _id: targetUserId,
+    market_id: loggedInUser.marketId,
+  });
+
+  if (!targetUser) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // 2. Authorization (centralized RBAC)
+  canUpdateUser(loggedInUser, targetUser);
+
+  // 3. Prevent permission escalation when updating permissions or customRole
+  if (updates.permissions !== undefined) {
+    validatePermissionsExist(updates.permissions);
+    preventPermissionEscalation(
+      loggedInUser.permissions,
+      updates.permissions,
+      loggedInUser.isSuperAdmin
+    );
+  }
+
+  // 4. Validate and check assignedShop_id if provided
+  if (updates.assignedShop_id !== undefined && updates.assignedShop_id !== null) {
+    if (!mongoose.Types.ObjectId.isValid(updates.assignedShop_id)) {
+      throw new ApiError(400, "Invalid shop ID format");
+    }
+    
+    // Verify shop exists and belongs to same market
+    const shop = await Shop.findOne({
+      _id: updates.assignedShop_id,
+      market_id: loggedInUser.marketId,
+    });
+
+    if (!shop) {
+      throw new ApiError(404, "Shop not found or not in your market");
+    }
+  }
+
+  // 5. Apply updates using AdminUpdateUserDto
+  if (updates.name !== undefined) {
+    targetUser.name = updates.name;
+  }
+
+  if (updates.phone !== undefined) {
+    targetUser.phone = updates.phone;
+  }
+
+  if (updates.address !== undefined) {
+    targetUser.address = updates.address;
+  }
+
+  if (updates.profile_image !== undefined) {
+    targetUser.profile_image = updates.profile_image;
+  }
+
+  if (updates.customRole !== undefined) {
+    targetUser.customRole = updates.customRole;
+  }
+
+  if (updates.permissions !== undefined) {
+    targetUser.permissions = updates.permissions;
+  }
+
+  if (updates.assignedShop_id !== undefined) {
+    targetUser.assignedShop_id = updates.assignedShop_id;
+  }
+
+  if (updates.status !== undefined) {
+    targetUser.status = updates.status;
+    targetUser.isActive = updates.status === "active";
+  }
+
+  await targetUser.save();
+
+  return res.status(200).json(
+    new ApiResponse(200, "User updated successfully", {
+      id: targetUser._id,
+      name: targetUser.name,
+      email: targetUser.email,
+      status: targetUser.status,
+    })
+  );
+});
+
+
+
+
+
+export const updateUserByEmail = asyncHandler(async (req: Request, res: Response) => {
+  const loggedInUser = req.user;
+  const { targetUserEmail, updates } = req.body as {
+    targetUserEmail: string;
+    updates: AdminUpdateUserDto;
+  };
+
+  if (!loggedInUser) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  if (!targetUserEmail || !updates) {
+    throw new ApiError(400, "Target user email and update data are required");
+  }
+
+  const normalizedTargetEmail = targetUserEmail.toLowerCase().trim();
+  const normalizedLoggedInEmail = loggedInUser.email.toLowerCase().trim();
+
+  // Prevent self-update
+  if (normalizedLoggedInEmail === normalizedTargetEmail) {
+    throw new ApiError(400, "Use /users/me to update your profile");
+  }
+
+  // VALIDATE UPDATES DTO
+  const validationResult = adminUpdateUserValidator.safeParse(updates);
+  if (!validationResult.success) {
+    const errors = validationResult.error.issues.map(
+      err => `${err.path.join(".")}: ${err.message}`
+    );
+    throw new ApiError(400, `Validation error: ${errors.join(", ")}`);
+  }
+
+  // Prevent empty update
+  if (Object.keys(updates).length === 0) {
+    throw new ApiError(400, "No fields provided to update");
+  }
+
+  // 1. Find target user (market isolation)
+  const targetUser = await User.findOne({
+    email: normalizedTargetEmail,
+    market_id: loggedInUser.marketId,
+  });
+
+  if (!targetUser) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // 2. Authorization (centralized RBAC)
+  canUpdateUser(loggedInUser, targetUser);
+
+  // 3. Prevent permission escalation when updating permissions or customRole
+  if (updates.permissions !== undefined) {
+    validatePermissionsExist(updates.permissions);
+    preventPermissionEscalation(
+      loggedInUser.permissions,
+      updates.permissions,
+      loggedInUser.isSuperAdmin
+    );
+  }
+
+  // 4. Validate and check assignedShop_id if provided
+  if (updates.assignedShop_id !== undefined && updates.assignedShop_id !== null) {
+    if (!mongoose.Types.ObjectId.isValid(updates.assignedShop_id)) {
+      throw new ApiError(400, "Invalid shop ID format");
+    }
+    
+    // Verify shop exists and belongs to same market
+    const shop = await Shop.findOne({
+      _id: updates.assignedShop_id,
+      market_id: loggedInUser.marketId,
+    });
+
+    if (!shop) {
+      throw new ApiError(404, "Shop not found or not in your market");
+    }
+  }
+
+  // 5. Apply updates using AdminUpdateUserDto
+  if (updates.name !== undefined) {
+    targetUser.name = updates.name;
+  }
+
+  if (updates.phone !== undefined) {
+    targetUser.phone = updates.phone;
+  }
+
+  if (updates.address !== undefined) {
+    targetUser.address = updates.address;
+  }
+
+  if (updates.profile_image !== undefined) {
+    targetUser.profile_image = updates.profile_image;
+  }
+
+  if (updates.customRole !== undefined) {
+    targetUser.customRole = updates.customRole;
+  }
+
+  if (updates.permissions !== undefined) {
+    targetUser.permissions = updates.permissions;
+  }
+
+  if (updates.assignedShop_id !== undefined) {
+    targetUser.assignedShop_id = updates.assignedShop_id;
+  }
+
+  if (updates.status !== undefined) {
+    targetUser.status = updates.status;
+    targetUser.isActive = updates.status === "active";
+  }
+
+  await targetUser.save();
+
+  return res.status(200).json(
+    new ApiResponse(200, "User updated successfully", {
+      id: targetUser._id,
+      name: targetUser.name,
+      email: targetUser.email,
+      status: targetUser.status,
+    })
+  );
 });

@@ -8,6 +8,7 @@ import productRouter from './routes/product.route';
 import { globalErrorHandler } from './middlewares/globalErrorHandler.middleware';
 import { notFoundHandler } from './middlewares/globalErrorHandler.middleware';
 import cookieParser from "cookie-parser"
+import "./models";
 import shopRouter from './routes/shop.route';
 
 dotenv.config();
@@ -23,11 +24,7 @@ app.use(cookieParser());
 
 // ---------- ROUTES ----------
 app.use('/api/users', userRouter);
-<<<<<<< HEAD
 app.use('/api/products',productRouter)
-=======
-app.use('/api/shops', shopRouter);
->>>>>>> 825050e39240e458d665bec77c7476faef02e1aa
 
 app.get('/', (req: Request, res: Response) => {
   res.send('<h1>Welcome to InventoHub Server your one place to manage all inventory tasks!</h1>');

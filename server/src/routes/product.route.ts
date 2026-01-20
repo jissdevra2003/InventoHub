@@ -10,4 +10,6 @@ const productRouter=express.Router()
 productRouter.post('/create',authMiddleware,rbac([PERMISSIONS.PRODUCT.CREATE]),createProduct)
 
 
+
+
 export default productRouter;

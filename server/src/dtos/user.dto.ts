@@ -29,3 +29,24 @@ export interface registerDto {
           profile_image?: string;
     }
 }
+
+export interface updateMyProfileDto {
+  name?: string;
+  phone?: string;
+  address?: string;
+  profile_image?: string;
+}
+
+
+export interface AdminUpdateUserDto {
+  name?: string;
+  phone?: string;
+  address?: string;
+  profile_image?: string;
+
+  customRole?: string;
+  permissions?: string[];
+
+  assignedShop_id?: string | null;
+  status?: "active" | "disabled";
+}
