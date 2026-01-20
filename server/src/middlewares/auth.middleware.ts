@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { User } from "../models/User.model";
+import { Types } from 'mongoose';
 
 // Extend Express Request type
 declare global {
@@ -12,8 +13,9 @@ declare global {
         userId: string;
         marketId: string;
         permissions: string[];
-        isSuperAdmin:boolean
-        builtInRole:string
+        isSuperAdmin: boolean;
+        builtInRole: string;
+        assignedShopsId: string[];
       };
     }
   }
@@ -62,7 +64,7 @@ interface JwtPayload {
     //select will include only the specified fields in the data object  
     //user permissions are also loaded here 
     const user = await User.findById(decoded.user_id).select(
-      "_id market_id status isActive isSuperAdmin permissions"
+      "_id market_id status isActive isSuperAdmin permissions assignedShops_id builtInRole"
     );
 
     if (!user) {
@@ -87,6 +89,9 @@ interface JwtPayload {
       isSuperAdmin: user.isSuperAdmin,
       builtInRole:user.builtInRole,
       permissions: user.permissions || [],
+      assignedShopsId: user.assignedShops_id
+        ? user.assignedShops_id.map((id: Types.ObjectId) => id.toString())
+        : [],
     };
 
     next();

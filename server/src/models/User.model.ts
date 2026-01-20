@@ -19,7 +19,7 @@ export interface IUser extends Document {
   createdBy?:Types.ObjectId | null;
   reset_token?: string;
   reset_token_expiry?: Date;
-  assignedShop_id?: Types.ObjectId | null;
+  assignedShops_id?: Types.ObjectId[] | null;
   profile_image?: string;
   isActive: boolean;
   last_login?: Date;
@@ -107,11 +107,11 @@ const userSchema = new Schema<IUser>(
         },
 
     // Manager / Staff: assigned shop
-    assignedShop_id: {
+    assignedShops_id: [{
       type: Schema.Types.ObjectId,
       ref: "Shop",
       default: null,
-    },
+    }],
 
     address: {
       type: String,
