@@ -5,6 +5,10 @@ import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import { productCreateValidator } from "../validators/product.validator";
 import { createProductDto } from "../dtos/product.dto";
+import { Shop } from "../models/Shop.model";
+import { Inventory } from "../models/Inventory.model";
+import { assignProductToShopValidator } from "../validators/assignProductToShop.validator";
+import { Types } from "mongoose";
 
 
 
@@ -112,3 +116,87 @@ export const listProducts=asyncHandler(async(req:Request,res:Response)=>{
         )
     )
 })
+
+
+export const assignProductToShop = asyncHandler(
+  async (req: Request, res: Response) => {
+
+    const user = req.user;
+    if (!user) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    const { productId } = req.params;
+
+    const result = assignProductToShopValidator.safeParse(req.body);
+    if (!result.success) {
+      const errors = result.error.issues.map(
+        e => `${e.path.join(".")}: ${e.message}`
+      );
+      throw new ApiError(400, `Validation error: ${errors.join(", ")}`);
+    }
+
+    const { shopId, quantity, min_stock } = result.data;
+
+    // 1. Validate product (market isolation)
+    const product = await Product.findOne({
+      _id: productId,
+      market_id: user.marketId,
+    });
+
+    if (!product) {
+      throw new ApiError(404, "Product not found in this market");
+    }
+
+    // 2. Validate shop (market isolation)
+    const shop = await Shop.findOne({
+      _id: shopId,
+      market_id: user.marketId,
+      isActive: true,
+    });
+
+    if (!shop) {
+      throw new ApiError(404, "Shop not found in this market");
+    }
+
+    // 3. Manager restriction: must be assigned to the shop
+    if (
+      user.builtInRole === "manager" &&
+      !shop.managers.some((id: Types.ObjectId) => id.toString() === user.userId)
+    ) {
+      throw new ApiError(
+        403,
+        "Managers can assign products only to shops they are assigned to"
+      );
+    }
+
+    // 4. Create or update inventory
+    const inventory = await Inventory.findOneAndUpdate(
+      {
+        market_id: user.marketId,
+        shop_id: shopId,
+        product_id: productId,
+      },
+      {
+        $set: {
+          quantity,
+          ...(min_stock !== undefined && { min_stock }),
+        },
+      },
+      {
+        new: true,
+        upsert: true, // create if not exists
+      }
+    );
+
+    return res.status(200).json(
+      new ApiResponse(200, "Product assigned to shop successfully", {
+        inventoryId: inventory._id,
+        productId,
+        shopId,
+        quantity: inventory.quantity,
+        min_stock: inventory.min_stock,
+      })
+    );
+  }
+);
