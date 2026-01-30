@@ -15,6 +15,6 @@ shopRouter.patch('/:shopId/remove-user', authMiddleware, rbac([PERMISSIONS.SHOP.
 
 shopRouter.get('/', authMiddleware, rbac([PERMISSIONS.SHOP.READ]), listShops);
 
-shopRouter.delete('/:shopId', authMiddleware, rbac([PERMISSIONS.SHOP.DELETE]), checkShopAccess, deleteShop);
+shopRouter.delete('/:shopId', authMiddleware, rbac([PERMISSIONS.SHOP.DELETE]), deleteShop);
 
 export default shopRouter;
