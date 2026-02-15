@@ -12,7 +12,8 @@ export interface IProduct extends Document
 
   category?: string;
   unit?: string;                 // e.g., "pcs", "kg", "box"
-  barcode?: string;              // barcode / EAN / UPC
+  barcode?: string; 
+  isActive?:boolean;             // barcode / EAN / UPC
   
   cost_price?: number;           // average/latest purchase cost (for valuation)
   selling_price?: number;        // default retail price
@@ -41,6 +42,7 @@ index:true
     name:{type:String,required:true,trim:true},
     sku:{type:String,required:true,trim:true},
     description: { type: String, trim: true },
+    isActive:{type:Boolean, default:true},
 
      category: { type: String, trim: true },
     unit: { type: String, trim: true, default: "pcs" },

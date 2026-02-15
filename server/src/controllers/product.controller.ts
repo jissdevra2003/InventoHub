@@ -90,7 +90,7 @@ export const listProducts=asyncHandler(async(req:Request,res:Response)=>{
         throw new ApiError(401,"Unauthorized");
     }
 
-        // /api/products/skip=0&limit=20
+        // /api/list-products/skip=0&limit=20
     const skip=Math.max(Number(req.query.skip) || 0,0);   //max of the two values 
     const limit=Math.min(Number(req.query.limit) || 10,50);    //minimum of the two values
 
@@ -170,7 +170,7 @@ export const assignProductToShop = asyncHandler(
       );
     }
 
-    // 4. Create or update inventory
+    // 4. Create(not exists already) or update(already exists) inventory
     const inventory = await Inventory.findOneAndUpdate(
       {
         market_id: user.marketId,
@@ -185,7 +185,7 @@ export const assignProductToShop = asyncHandler(
       },
       {
         new: true,
-        upsert: true, // create if not exists
+        upsert: true, // create if not exists     upsert(update and insert)
       }
     );
 
@@ -200,3 +200,110 @@ export const assignProductToShop = asyncHandler(
     );
   }
 );
+
+
+export const getProductById = asyncHandler(async (req: Request, res: Response) => {
+  const user = req.user;
+  if (!user) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  const { productId } = req.params;
+
+  const product = await Product.findOne({
+    _id: productId,
+    market_id: user.marketId,
+    isActive: true,
+  }).select(
+    "name sku category unit selling_price stock_quantity createdAt updatedAt"
+  );
+
+  if (!product) {
+    throw new ApiError(404, "Product not found");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, "Product retrieved successfully", product)
+  );
+});
+
+
+export const updateProduct = asyncHandler(async (req: Request, res: Response) => {
+  const user = req.user;
+  if (!user) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  const { productId } = req.params;
+
+  // Validate update payload
+  const result = productCreateValidator.partial().safeParse(req.body);
+  if (!result.success) {
+    const errors = result.error.issues.map(
+      e => `${e.path.join(".")}: ${e.message}`
+    );
+    throw new ApiError(400, `Validation error: ${errors.join(", ")}`);
+  }
+
+  //updated product data
+  const updateData = result.data;
+
+  if (Object.keys(updateData).length === 0) {
+    throw new ApiError(400, "No fields provided for update");
+  }
+
+  const product = await Product.findOne({
+    _id: productId,
+    market_id: user.marketId,
+    isActive: true,
+  });
+
+  if (!product) {
+    throw new ApiError(404, "Product not found");
+  }
+
+  // Explicit updates (clear & safe)
+  if (updateData.name !== undefined) product.name = updateData.name;
+  if (updateData.category !== undefined) product.category = updateData.category;
+  if (updateData.unit !== undefined) product.unit = updateData.unit;
+  if (updateData.selling_price !== undefined)
+    product.selling_price = updateData.selling_price;
+
+  await product.save();
+
+  return res.status(200).json(
+    new ApiResponse(200, "Product updated successfully", {
+      id: product._id,
+      name: product.name,
+      sku: product.sku,
+      updatedAt: product.updatedAt,
+    })
+  );
+});
+
+
+export const softDeleteProduct = asyncHandler(async (req: Request, res: Response) => {
+  const user = req.user;
+  if (!user) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  const { productId } = req.params;
+
+  const product = await Product.findOne({
+    _id: productId,
+    market_id: user.marketId,
+    isActive: true,
+  });
+
+  if (!product) {
+    throw new ApiError(404, "Product not found");
+  }
+
+  product.isActive = false;
+  await product.save();
+
+  return res.status(200).json(
+    new ApiResponse(200, "Product deleted successfully")
+  );
+});

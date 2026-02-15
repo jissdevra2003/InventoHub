@@ -17,14 +17,17 @@ const app: Express = express();
 const PORT: number = Number(process.env.PORT) || 3000;
 
 // ---------- MIDDLEWARE ----------
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5174",
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // ---------- ROUTES ----------
 app.use('/api/users', userRouter);
-app.use('/api/products',productRouter)
+app.use('/api/products', productRouter)
 
 app.get('/', (req: Request, res: Response) => {
   res.send('<h1>Welcome to InventoHub Server your one place to manage all inventory tasks!</h1>');
@@ -36,11 +39,11 @@ app.use(notFoundHandler);
 
 // ---------- DATABASE & SERVER START ----------
 connectDB().then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 })
-.catch((error) => {
+  .catch((error) => {
     console.error("Failed to start server:", error);
-});
+  });
 

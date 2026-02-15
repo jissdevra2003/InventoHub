@@ -65,7 +65,7 @@ interface JwtPayload {
     //select will include only the specified fields in the data object  
     //user permissions are also loaded here 
     const user = await User.findById(decoded.user_id).select(
-      "_id market_id status isActive isSuperAdmin permissions assignedShops_id builtInRole"
+      "_id market_id email status isActive isSuperAdmin permissions assignedShops_id builtInRole"
     );
 
     if (!user) {

@@ -92,3 +92,8 @@ $RECYCLE.BIN/
 *.pid.lock
 *.sqlite
 *.sqlite3
+
+# -------------------------------------------------------
+# 🔒 Private Development Plans
+# -------------------------------------------------------
+Development_Plans/

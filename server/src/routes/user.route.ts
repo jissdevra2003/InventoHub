@@ -7,6 +7,9 @@ import { AcceptInvite } from "../controllers/user.controller";
 
 const userRouter = express.Router();
 
+
+//Express matches routes top → bottom.
+// ✅ FIRST: static / specific routes
 userRouter.post("/register", OwnerRegister);
 
 userRouter.post("/invite", authMiddleware,  rbac([PERMISSIONS.USER.INVITE]),  InviteUser);
@@ -26,13 +29,15 @@ userRouter.post("/logout",  authMiddleware,  Logout);
 
 userRouter.patch("/update-me", authMiddleware, UpdateMyProfile);
 
+userRouter.patch( "/update-by-email", authMiddleware, rbac([PERMISSIONS.USER.UPDATE]), updateUserByEmail )
+
+// ✅ THEN: dynamic param routes
 userRouter.patch(   "/:userId/disable",   authMiddleware,   rbac([PERMISSIONS.USER.UPDATE]),    DisableUser );
 
 userRouter.patch(   "/:userId/enable",   authMiddleware,   rbac([PERMISSIONS.USER.UPDATE]),   EnableUser );
 
 userRouter.patch( "/:targetUserId", authMiddleware, rbac([PERMISSIONS.USER.UPDATE]), updateUserById );
 
-userRouter.patch( "/update-by-email", authMiddleware, rbac([PERMISSIONS.USER.UPDATE]), updateUserByEmail )
 
 
 

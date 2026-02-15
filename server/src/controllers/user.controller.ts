@@ -693,16 +693,21 @@ const loggedInUser = req.user;
 export const updateUserById = asyncHandler(async (req: Request, res: Response) => {
   const loggedInUser = req.user;
   const {targetUserId}=req.params;
-  const { updates } = req.body as {
-    updates: AdminUpdateUserDto;
-  };
+  
 
   if (!loggedInUser) {
     throw new ApiError(401, "Unauthorized");
   }
 
-  if (!targetUserId || !updates) {
-    throw new ApiError(400, "Target userId and update data are required");
+  if (!targetUserId) {
+    throw new ApiError(400, "Target userId is required");
+  }
+
+  const updates = req.body as AdminUpdateUserDto;
+
+  if(Object.keys(updates).length===0)
+  {
+    throw new ApiError(400,"Updated data is required")
   }
 
   // Prevent self-update
@@ -821,16 +826,15 @@ export const updateUserById = asyncHandler(async (req: Request, res: Response) =
 
 export const updateUserByEmail = asyncHandler(async (req: Request, res: Response) => {
   const loggedInUser = req.user;
-  const { targetUserEmail, updates } = req.body as {
+  const { targetUserEmail, ...updates } = req.body as {
     targetUserEmail: string;
-    updates: AdminUpdateUserDto;
-  };
+  } & AdminUpdateUserDto;
 
   if (!loggedInUser) {
     throw new ApiError(401, "Unauthorized");
   }
 
-  if (!targetUserEmail || !updates) {
+  if (!targetUserEmail || Object.keys(updates).length===0) {
     throw new ApiError(400, "Target user email and update data are required");
   }
 
