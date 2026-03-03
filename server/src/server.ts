@@ -10,6 +10,7 @@ import { notFoundHandler } from './middlewares/globalErrorHandler.middleware';
 import cookieParser from "cookie-parser"
 import "./models";
 import shopRouter from './routes/shop.route';
+import supplierRouter from './routes/supplier.route';
 
 dotenv.config();
 
@@ -18,7 +19,7 @@ const PORT: number = Number(process.env.PORT) || 3000;
 
 // ---------- MIDDLEWARE ----------
 app.use(cors({
-  origin: "http://localhost:5174",
+  origin: "http://localhost:5173",
   credentials: true,
 }));
 app.use(express.json());
@@ -28,6 +29,7 @@ app.use(cookieParser());
 // ---------- ROUTES ----------
 app.use('/api/users', userRouter);
 app.use('/api/products', productRouter)
+app.use('/api/suppliers', supplierRouter)
 
 app.get('/', (req: Request, res: Response) => {
   res.send('<h1>Welcome to InventoHub Server your one place to manage all inventory tasks!</h1>');
