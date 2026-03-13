@@ -11,6 +11,8 @@ import cookieParser from "cookie-parser"
 import "./models";
 import shopRouter from './routes/shop.route';
 import supplierRouter from './routes/supplier.route';
+import inventoryRouter from './routes/inventory.route';
+import authRouter from './routes/auth.route';
 
 dotenv.config();
 
@@ -27,9 +29,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // ---------- ROUTES ----------
+app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
-app.use('/api/products', productRouter)
-app.use('/api/suppliers', supplierRouter)
+app.use('/api/products', productRouter);
+app.use('/api/suppliers', supplierRouter);
+app.use('/api/shops', shopRouter);
+app.use('/api/inventory', inventoryRouter);
+
 
 app.get('/', (req: Request, res: Response) => {
   res.send('<h1>Welcome to InventoHub Server your one place to manage all inventory tasks!</h1>');

@@ -1,9 +1,17 @@
-
 import express from "express"
 import { authMiddleware } from "../middlewares/auth.middleware";
-import { listInventoryByShop } from "../controllers/inventory.controller";
+import {
+    listInventoryByShop,
+    increaseInventory,
+    decreaseInventory,
+    listLowStockInventory
+} from "../controllers/inventory.controller";
 
-const inventoryRouter=express.Router();
+const inventoryRouter = express.Router();
 
+inventoryRouter.get("/shops/:shopId/inventory", authMiddleware, listInventoryByShop);
+inventoryRouter.patch("/increase", authMiddleware, increaseInventory);
+inventoryRouter.patch("/decrease", authMiddleware, decreaseInventory);
+inventoryRouter.get("/low-stock", authMiddleware, listLowStockInventory);
 
-inventoryRouter.get( "/shops/:shopId/inventory",   authMiddleware,   listInventoryByShop );
+export default inventoryRouter;
