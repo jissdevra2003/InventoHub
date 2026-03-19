@@ -84,11 +84,9 @@ address: { type: String, trim: true },
       type: {
         type: String,
         enum: ["Point"],
-        default: "Point",
       },
       coordinates: {
         type: [Number], // [lng, lat]
-        // don't set default here; when omitted, location can be null
       },
     },
 

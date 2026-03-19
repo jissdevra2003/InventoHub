@@ -98,12 +98,14 @@ export const assignUserToShop = asyncHandler(async (req: Request, res: Response)
     }
 
     //prevent duplicate assignment
-    if(user.assignedShops.includes(shopId)){
+    const isAlreadyAssigned = user.assignedShops_id?.some((id: any) => id.toString() === shopId);
+    if(isAlreadyAssigned){
         throw new ApiError(409, "User is already assigned to this shop");
     }
 
     //Assign user to shop
-    user.assignedShops.push(shopId);
+    if(!user.assignedShops_id) user.assignedShops_id = [];
+    user.assignedShops_id.push(shopId as any);
     await user.save();
 
 
@@ -148,13 +150,15 @@ export const removeUserFromShop = asyncHandler(async (req: Request, res: Respons
     }
 
     //check if user is assigned to shop
-    const isAssigned = user.assignedShops?.some((id:Types.ObjectId) => id.toString() === shopId);
+    const isAssigned = user.assignedShops_id?.some((id:Types.ObjectId) => id.toString() === shopId);
     if (!isAssigned) {
         throw new ApiError(409, "User is not assigned to this shop");
     }
 
     //Remove user from shop
-    user.assignedShops = user.assignedShops.filter((id: Types.ObjectId) => id.toString() !== shopId);
+    if (user.assignedShops_id) {
+        user.assignedShops_id = user.assignedShops_id.filter((id: Types.ObjectId) => id.toString() !== shopId);
+    }
 
     await user.save();
 

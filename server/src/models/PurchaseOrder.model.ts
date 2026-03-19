@@ -1,7 +1,7 @@
 import mongoose ,{ Document, Schema, Types } from 'mongoose'
 
 
-export interface IPurchaseItem {
+export interface IPurchaseOrderItem {
   product_id: Types.ObjectId;
   product_name?:string
   sku:string
@@ -16,7 +16,7 @@ export interface IPurchaseOrder extends Document {
   count:number
   shop_id: Types.ObjectId;
   supplier_id: Types.ObjectId;
-    items: IPurchaseItem[];
+    items: IPurchaseOrderItem[];
   subtotal: number;
   total_amount: number;
   status: "draft"  | "received" | "cancelled";
@@ -25,7 +25,7 @@ export interface IPurchaseOrder extends Document {
   updatedAt?: Date;
 }
 
-const purchaseItemSchema=new Schema<IPurchaseItem>(
+const purchaseItemSchema=new Schema<IPurchaseOrderItem>(
 {
 product_id:{
 type:Schema.Types.ObjectId,
@@ -70,7 +70,6 @@ required:true
 purchase_number:{       //PO-00001 (purchase number)
   type:String,
   required:true,
-  unique:true,
   index:true,
   trim:true
 
@@ -119,5 +118,7 @@ items: { type: [purchaseItemSchema],
   {timestamps:true}
 
 );
+
+purchaseOrderSchema.index({ market_id: 1, purchase_number: 1 }, { unique: true });
 
 export const PurchaseOrder=mongoose.model<IPurchaseOrder>("PurchaseOrder",purchaseOrderSchema);

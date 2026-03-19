@@ -32,9 +32,7 @@ export const listInventoryByShop = asyncHandler(
     // 2. Manager can access only assigned shops
     if (
       user.builtInRole === "manager" &&
-      !shop.managers?.some(
-        (id: any) => id.toString() === user.userId
-      )
+      !user.assignedShopsId.includes(shopId.toString())
     ) {
       throw new ApiError(403, "Access denied for this shop");
     }
@@ -94,6 +92,10 @@ export const increaseInventory = asyncHandler(
 
     const { shopId, productId, quantity, reason }: UpdateInventoryDto = result.data;
 
+    if (user.builtInRole === "manager" && !user.assignedShopsId.includes(shopId.toString())) {
+      throw new ApiError(403, "Access denied. You are not assigned to this shop.");
+    }
+
     // 1. Find or create inventory record
     let inventory = await Inventory.findOne({
       shop_id: shopId,
@@ -151,6 +153,10 @@ export const decreaseInventory = asyncHandler(
 
     const { shopId, productId, quantity, reason }: UpdateInventoryDto = result.data;
 
+    if (user.builtInRole === "manager" && !user.assignedShopsId.includes(shopId.toString())) {
+      throw new ApiError(403, "Access denied. You are not assigned to this shop.");
+    }
+
     // 1. Find inventory record
     const inventory = await Inventory.findOne({
       shop_id: shopId,
@@ -196,13 +202,18 @@ export const listLowStockInventory = asyncHandler(
     const user = req.user;
     if (!user) throw new ApiError(401, "Unauthorized");
 
-    // Fetch products where quantity is less than or equal to min_stock
-    // We only consider records where min_stock is defined and greater than 0
-    const lowStockItems = await Inventory.find({
+    // Build the query filter securely
+    const filter: any = {
       market_id: user.marketId,
       min_stock: { $exists: true, $ne: null },
-      $expr: { $lte: ["$quantity", "$min_stock"] },
-    }).populate("product_id shop_id");
+      $expr: { $lte: ["$quantity", "$min_stock"] }
+    };
+
+    if (user.builtInRole === "manager") {
+      filter.shop_id = { $in: user.assignedShopsId };
+    }
+
+    const lowStockItems = await Inventory.find(filter).populate("product_id shop_id");
 
     const items = lowStockItems.map((inv) => ({
       inventoryId: inv._id,

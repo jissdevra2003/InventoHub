@@ -51,7 +51,7 @@ export const verifyTempToken = (token: string): TempTokenPayload => {
       throw new ApiError(401, "Invalid token: not a registration token");
     }
 
-    return decoded;
+    return decoded;  //decoded has marketId and purpose
 
   } catch (error) {
     // If token is expired or tampered with
