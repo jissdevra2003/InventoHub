@@ -14,6 +14,7 @@ import supplierRouter from './routes/supplier.route';
 import inventoryRouter from './routes/inventory.route';
 import authRouter from './routes/auth.route';
 import purchaseOrderRouter from './routes/purchaseOrder.route';
+import salesOrderRouter from './routes/salesOrder.route';
 
 dotenv.config();
 
@@ -37,6 +38,7 @@ app.use('/api/suppliers', supplierRouter);
 app.use('/api/shops', shopRouter);
 app.use('/api/inventory', inventoryRouter);
 app.use('/api/purchase-orders', purchaseOrderRouter);
+app.use('/api/sales-orders', salesOrderRouter);
 
 
 app.get('/', (req: Request, res: Response) => {
