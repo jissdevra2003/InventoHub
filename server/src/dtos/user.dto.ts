@@ -47,6 +47,6 @@ export interface AdminUpdateUserDto {
   customRole?: string;
   permissions?: string[];
 
-  assignedShop_id?: string | null;
+  assignedShops_id?: string[] | null;
   status?: "active" | "disabled";
 }

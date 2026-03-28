@@ -77,7 +77,7 @@ export const adminUpdateUserValidator = z.object({
   customRole: z.string().optional(),
   permissions: z.array(z.string()).optional(),
 
-  assignedShop_id: z.string().nullable().optional(),
+  assignedShops_id: z.array(z.string()).nullable().optional(),
 
   status: z.enum(["active", "disabled"]).optional(),
 });

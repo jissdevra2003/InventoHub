@@ -58,3 +58,25 @@ export const userRegisterValidator = z.object({
   (data) => data.password === data.confirmPassword,
   { message: "Passwords do not match", path: ["confirmPassword"] }
 );
+
+
+// ============================================
+// Forgot Password Validator
+// ============================================
+export const forgotPasswordValidator = z.object({
+  email: z.email("Invalid email format"),
+});
+
+
+// ============================================
+// Reset Password Validator
+// ============================================
+export const resetPasswordValidator = z.object({
+  token: z.string().min(1, "Reset token is required"),
+  newPassword: z.string()
+    .regex(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/, "Password must be 8+ characters with at least one letter and one number"),
+  confirmPassword: z.string(),
+}).refine(
+  (data) => data.newPassword === data.confirmPassword,
+  { message: "Passwords do not match", path: ["confirmPassword"] }
+);

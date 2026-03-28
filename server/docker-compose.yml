@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: inventory-backend
+    container_name: inventohub-server
+    ports:
+      - "10000:10000"
+    env_file:
+      - .env
+    restart: unless-stopped
+    depends_on:
+      - mongodb # Tells Docker to start MongoDB before starting the backend
+
+  mongodb:
+    image: mongo:6.0 # Using a specific stable version
+    container_name: DB-0
+    ports:
+      - "27017:27017" # Exposes MongoDB to your PC so you can use MongoDB Compass
+    volumes:
+      - mongodb_data:/data/db # Saves the database files to a Docker volume so data isn't lost if the container stops
+    restart: unless-stopped
+
+volumes:
+  mongodb_data: # Defines the storage volume for MongoDB

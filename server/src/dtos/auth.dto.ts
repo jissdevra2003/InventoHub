@@ -37,3 +37,17 @@ export interface TempTokenPayload {
   marketId: string;
   purpose: "registration";  // makes it clear this token is ONLY for registration
 }
+
+
+// Forgot Password: user provides their email
+export interface ForgotPasswordDto {
+  email: string;
+}
+
+
+// Reset Password: user provides the token from the email + new password
+export interface ResetPasswordDto {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}

@@ -11,22 +11,27 @@ err:Error | ApiError,          // The error that was thrown
 )=>{
     console.error('Error : ',err.message);
 
-        // If it's our custom ApiError, use its status code
+    // We check if we are in development mode to decide whether to send the error stack trace
+    const isDevelopment = process.env.NODE_ENV === 'development';
+
+    // If it's our custom ApiError, use its status code
     if(err instanceof ApiError)
     {
         return res.status(err.statusCode).json({
-            success:false,
-            message:err.message,
-            
-
-        })
+            success: false,
+            message: err.message,
+            // Include stack trace only if we are in development mode
+            stack: isDevelopment ? err.stack : undefined 
+        });
     }
-// For all other errors, return 500
-    return res.status(500).json({
-success:false,
-message:err.message || 'Internal server error'
 
-    })
+    // For all other errors, return a default 500 status code
+    return res.status(500).json({
+        success: false,
+        message: err.message || 'Internal server error',
+        // Include stack trace only if we are in development mode
+        stack: isDevelopment ? err.stack : undefined 
+    });
 
 
 }

@@ -192,3 +192,93 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
     session.endSession();
   }
 });
+
+
+// ============================================
+// FORGOT PASSWORD
+// ============================================
+// Generates a reset token, saves it to the user record, and logs it.
+// In production you would send this token via email.
+
+import crypto from 'crypto';
+import { forgotPasswordValidator, resetPasswordValidator } from '../validators/auth.validator';
+import { ForgotPasswordDto, ResetPasswordDto } from '../dtos/auth.dto';
+
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+
+  // --- 1. Validate ---
+  const result = forgotPasswordValidator.safeParse(req.body);
+  if (!result.success) {
+    const errors = result.error.issues.map(e => `${e.path.join(".")}: ${e.message}`);
+    throw new ApiError(400, `Validation error: ${errors.join(", ")}`);
+  }
+
+  const { email }: ForgotPasswordDto = result.data;
+
+  // --- 2. Find user ---
+  const user = await User.findOne({ email, status: "active" });
+
+  // Always return success to prevent email enumeration attacks
+  if (!user) {
+    return res.status(200).json(
+      new ApiResponse(200, "If an account with that email exists, a reset link has been sent.")
+    );
+  }
+
+  // --- 3. Generate a reset token (random hex string) ---
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  const tokenExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+  user.reset_token = resetToken;
+  user.reset_token_expiry = tokenExpiry;
+  await user.save();
+
+  // --- 4. Log the token (email sending placeholder) ---
+  console.log("─────────────────────────────────────────────");
+  console.log(`📧 Password Reset Token for ${email}`);
+  console.log(`   Token  : ${resetToken}`);
+  console.log(`   Expires: ${tokenExpiry.toISOString()}`);
+  console.log("─────────────────────────────────────────────");
+
+  return res.status(200).json(
+    new ApiResponse(200, "If an account with that email exists, a reset link has been sent.")
+  );
+});
+
+
+// ============================================
+// RESET PASSWORD
+// ============================================
+// Verifies the reset token, checks expiry, and updates the password.
+
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+
+  // --- 1. Validate ---
+  const result = resetPasswordValidator.safeParse(req.body);
+  if (!result.success) {
+    const errors = result.error.issues.map(e => `${e.path.join(".")}: ${e.message}`);
+    throw new ApiError(400, `Validation error: ${errors.join(", ")}`);
+  }
+
+  const { token, newPassword }: ResetPasswordDto = result.data;
+
+  // --- 2. Find user by reset token ---
+  const user = await User.findOne({
+    reset_token: token,
+    reset_token_expiry: { $gt: new Date() },  // token must not be expired
+  });
+
+  if (!user) {
+    throw new ApiError(400, "Invalid or expired reset token. Please request a new one.");
+  }
+
+  // --- 3. Update password (pre-save hook will hash it) ---
+  user.password = newPassword;
+  user.reset_token = undefined;
+  user.reset_token_expiry = undefined;
+  await user.save();
+
+  return res.status(200).json(
+    new ApiResponse(200, "Password reset successfully. You can now log in with your new password.")
+  );
+});

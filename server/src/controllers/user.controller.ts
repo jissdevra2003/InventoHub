@@ -8,7 +8,6 @@ import { ApiResponse } from '../utils/ApiResponse';
 import { adminUpdateUserValidator, registerValidator, updateMeValidator } from '../validators/user.validator';
 import { ALL_PERMISSIONS } from '../permissions/main.perm';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import crypto from 'crypto'
 import { Invite } from '../models/Invite.model';
@@ -17,194 +16,193 @@ import { canUpdateUser } from '../utils/userAccess';
 
 
 
-const generateToken = (user_id: string, market_id: string ):string => {
-    const tokenPayload = { user_id, market_id };
-    // Generate JWT token with user_id and market_id
-    // Use a secret key from environment variables or a default value
-    if (!process.env.JWT_SECRET) {
-        throw new Error("JWT_SECRET is not defined in environment variables");
-    }
-    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'nothing', { expiresIn: '7d' });
+const generateToken = (user_id: string, market_id: string): string => {
+  const tokenPayload = { user_id, market_id };
+  // Generate JWT token with user_id and market_id
+  // Use a secret key from environment variables or a default value
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is not defined in environment variables");
+  }
+  const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'nothing', { expiresIn: '7d' });
 
-    return token;
+  return token;
 }
 
 const validatePermissionsExist = (permissions: string[]): void => {
-    const invalidPermissions = permissions.filter(p => !ALL_PERMISSIONS.includes(p as any));
+  const invalidPermissions = permissions.filter(p => !ALL_PERMISSIONS.includes(p as any));
 
-    if (invalidPermissions.length > 0) {
-        throw new ApiError(400, `Invalid permissions: ${invalidPermissions.join(", ")}`);
-    }
+  if (invalidPermissions.length > 0) {
+    throw new ApiError(400, `Invalid permissions: ${invalidPermissions.join(", ")}`);
+  }
 
 }
 
 const preventPermissionEscalation = (inviterPermissions: string[], toAssignPermissions: string[], isSuperAdmin: boolean): void => {
-    
-    //superadmin bypass
-    if (isSuperAdmin && inviterPermissions.includes('*')) {
-        return;
-    }
 
-    //1)check if inviter has perms to invite users
-    if (!inviterPermissions.includes("user:invite")) {
-        throw new ApiError(403, "You don't have user invitation permission");
-    }
+  //superadmin bypass
+  if (isSuperAdmin && inviterPermissions.includes('*')) {
+    return;
+  }
 
-    //2)Permission escalation protection: ensure inviter has all permissions they are trying to assign
-    const invalid = toAssignPermissions.filter(p => !inviterPermissions.includes(p));
+  //1)check if inviter has perms to invite users
+  if (!inviterPermissions.includes("user:invite")) {
+    throw new ApiError(403, "You don't have user invitation permission");
+  }
 
-    if (invalid.length > 0) {
+  //2)Permission escalation protection: ensure inviter has all permissions they are trying to assign
+  const invalid = toAssignPermissions.filter(p => !inviterPermissions.includes(p));
+
+  if (invalid.length > 0) {
     throw new ApiError(403, `Cannot assign permissions you don't own: ${invalid.join(", ")}`);
-}
+  }
 };
 
 
 
- //--- FRONTEND: send object which contains owner and market object ---
+//--- FRONTEND: send object which contains owner and market object ---
 export const OwnerRegister = asyncHandler(async (req: Request, res: Response) => {
 
-    //validate request body with help of zod validator
-    const result = registerValidator.safeParse(req.body);
-    if (!result.success) {
-        const errors = result.error.issues.map(issue => ({
-            field: issue.path.join('.'),
-            message: issue.message,
-        }))
-        throw new ApiError(400, `Validation Error: ${errors.map(e => e.field + ' => ' + e.message).join('; ')}`);
-    }
+  //validate request body with help of zod validator
+  const result = registerValidator.safeParse(req.body);
+  if (!result.success) {
+    const errors = result.error.issues.map(issue => ({
+      field: issue.path.join('.'),
+      message: issue.message,
+    }))
+    throw new ApiError(400, `Validation Error: ${errors.map(e => e.field + ' => ' + e.message).join('; ')}`);
+  }
 
 
-    //type safe and validated data using regisrterDto
-    const data: registerDto = result.data;
+  //type safe and validated data using regisrterDto
+  const data: registerDto = result.data;
 
-    const { owner, market } = data;
+  const { owner, market } = data;
 
-    //checks
-    if (!owner || !market) {
-       throw new ApiError(400, "Owner and Market information are required");
-    }
+  //checks
+  if (!owner || !market) {
+    throw new ApiError(400, "Owner and Market information are required");
+  }
 
-    //checks
-    const [
-        existingUserName,
-        existingMarket,
-        existingUser
-        ] = await Promise.all([
-        User.findOne({ username: owner.username }),
-        Market.findOne({
-          $or: [
-            { market_email: market.market_email },
-            { market_phone: market.market_phone }
-          ]
-        }),
-        User.findOne({
-          $or: [
-            { email: owner.email },
-            { phone: owner.phone }
-          ]
-  })
-]);
+  //checks
+  const [
+    existingUserName,
+    existingMarket,
+    existingUser
+  ] = await Promise.all([
+    User.findOne({ username: owner.username }),
+    Market.findOne({
+      $or: [
+        { market_email: market.market_email },
+        { market_phone: market.market_phone }
+      ]
+    }),
+    User.findOne({
+      $or: [
+        { email: owner.email },
+        { phone: owner.phone }
+      ]
+    })
+  ]);
 
-   
-   if (existingUserName) {
-       throw new ApiError(400, "Username already taken");
-   }
 
-    if (existingMarket) {
-        throw new ApiError(400, "Market with this email or phone number already exists");
-    }
+  if (existingUserName) {
+    throw new ApiError(400, "Username already taken");
+  }
 
-    if (existingUser) {
-        throw new ApiError(400, "User with this email or phone already exists");
-    }
+  if (existingMarket) {
+    throw new ApiError(400, "Market with this email or phone number already exists");
+  }
 
-    
-    //START session 
-    const session = await mongoose.startSession();
-    session.startTransaction();
+  if (existingUser) {
+    throw new ApiError(400, "User with this email or phone already exists");
+  }
 
-    try {
-        // create market and user in DB here
-        //save the market and user data in DB and doing it inside the transaction
-         const [marketObj] = await Market.create([{...market,isActive:true}], { session });
 
-        // console.time("userPasswordHashing");
-        // //remove this if pre hook is used in user model for hashing password
-        // const saltRounds = Number(process.env.SALT_ROUNDS || 8);
-        // const hashedPassword = await bcrypt.hash(owner.password, saltRounds);
-        // owner.password = hashedPassword;
-        // console.timeEnd("userPasswordHashing");
+  //START session 
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // create market and user in DB here
+    //save the market and user data in DB and doing it inside the transaction
+    const [marketObj] = await Market.create([{ ...market, isActive: true }], { session });
+
+    // console.time("userPasswordHashing");
+    // //remove this if pre hook is used in user model for hashing password
+    // const saltRounds = Number(process.env.SALT_ROUNDS || 8);
+    // const hashedPassword = await bcrypt.hash(owner.password, saltRounds);
+    // owner.password = hashedPassword;
+    // console.timeEnd("userPasswordHashing");
 
     //array here because mongoDB extracts an array
-        const [userObj] = await User.create([{
-            ...owner,
-            market_id: marketObj._id,
-            isSuperAdmin: true,
-            isActive: true,
-            status:"active",
-            permissions: ['*'] // all permissions as SuperAdmin
-        }], { session });
+    const [userObj] = await User.create([{
+      ...owner,
+      market_id: marketObj._id,
+      isSuperAdmin: true,
+      isActive: true,
+      status: "active",
+      permissions: ['*'] // all permissions as SuperAdmin
+    }], { session });
 
-        //COMMIT transaction   ,   save changes to the DB
-        await session.commitTransaction();
-                                                                                                        
-        const userData = await User.findById(userObj._id).select('-password -__v -createdAt -updatedAt').populate('market_id', 'market_name market_email market_phone');
-    
-        if (!userData) {
-            throw new ApiError(500, "Failed to create user");
-        }
-    
-        const marketData = await Market.findById(marketObj._id).select('-__v -createdAt -updatedAt');
-    
-        if (!marketData) {
-            throw new ApiError(500, "Failed to create market");
-        }
-    
+    //COMMIT transaction   ,   save changes to the DB
+    await session.commitTransaction();
+
+    const userData = await User.findById(userObj._id).select('-password -__v -createdAt -updatedAt').populate('market_id', 'market_name market_email market_phone');
+
+    if (!userData) {
+      throw new ApiError(500, "Failed to create user");
+    }
+
+    const marketData = await Market.findById(marketObj._id).select('-__v -createdAt -updatedAt');
+
+    if (!marketData) {
+      throw new ApiError(500, "Failed to create market");
+    }
+
     const token = generateToken(userObj._id.toString(), marketObj._id.toString());
-    
-    
-        // Set token in response header
-        // res.setHeader('Authorization', `Bearer ${token}`);
-    return res.
-       status(201).
-       cookie("token", token, {
-       httpOnly: true,
-       secure: process.env.NODE_ENV === "production",
-       sameSite: "lax",
-       maxAge: 7 * 24 * 60 * 60 * 1000
-         }).
-       json(new ApiResponse(
-            201,
-            'Market and User registered successfully',
-            { userData, marketData }
-        ));
-} catch (error) {
-        //ABORT transaction , Auto rollback
-        await session.abortTransaction();
-        console.error("Error during registration:", error);
 
-        throw error instanceof ApiError ? error : new ApiError(500, "Internal Server Error");
-    }
-    finally {
-        session.endSession();
-    }
-    
+
+    // Set token in response header
+    // res.setHeader('Authorization', `Bearer ${token}`);
+    return res.
+      status(201).
+      cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000
+      }).
+      json(new ApiResponse(
+        201,
+        'Market and User registered successfully',
+        { userData, marketData }
+      ));
+  } catch (error) {
+    //ABORT transaction , Auto rollback
+    await session.abortTransaction();
+    console.error("Error during registration:", error);
+
+    throw error instanceof ApiError ? error : new ApiError(500, "Internal Server Error");
+  }
+  finally {
+    session.endSession();
+  }
+
 });
 
-export const Login =asyncHandler(async (req:Request, res:Response)=>{
+export const Login = asyncHandler(async (req: Request, res: Response) => {
 
 
-    const {email,password}=req.body
+  const { email, password } = req.body
 
-     if (!email || !password) {
+  if (!email || !password) {
     throw new ApiError(400, "Email and password are required");
   }
 
   //find user by email and populate with market(organization details) in which organization the user works in 
-  const user= await User.findOne({email}).populate("market_id","market_name market_email");
+  const user = await User.findOne({ email }).populate("market_id", "market_name market_email");
 
-  if(!user)
-  {
+  if (!user) {
     throw new ApiError(401, "Invalid email address");
   }
 
@@ -221,14 +219,14 @@ export const Login =asyncHandler(async (req:Request, res:Response)=>{
   }
 
   //if await is not used here then it returns a pending promise. so if pass is correct or wrong still it will be a promise which will act as truthy value and user will be able to login incorrect password
-   const isMatch = await user.comparePasswords(password)
-   if (!isMatch) {
+  const isMatch = await user.comparePasswords(password)
+  if (!isMatch) {
     throw new ApiError(401, "Invalid password");
   }
 
-  const token=generateToken(
-user._id.toString(),
-user.market_id._id.toString()
+  const token = generateToken(
+    user._id.toString(),
+    user.market_id._id.toString()
 
   )
 
@@ -259,122 +257,119 @@ user.market_id._id.toString()
 
 })
 
-export const Logout = asyncHandler(async (req:Request, res:Response)=>{
+export const Logout = asyncHandler(async (req: Request, res: Response) => {
 
-    return res
+  return res
     .status(200)
-    .clearCookie("token",{
-        httpOnly:true,
-        secure:process.env.NODE_ENV==="production",
-        sameSite:"lax"
+    .clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax"
     })
-    .json(new ApiResponse(200,"Logged out successfully"));
+    .json(new ApiResponse(200, "Logged out successfully"));
 })
 
 
-export const GetUserProfile=asyncHandler(async (req:Request,res:Response)=>{
+export const GetUserProfile = asyncHandler(async (req: Request, res: Response) => {
 
-  const userId=req.user?.userId
-  if(!userId)
-  {
-    throw new ApiError(401,"Unauthorized");
+  const userId = req.user?.userId
+  if (!userId) {
+    throw new ApiError(401, "Unauthorized");
   }
 
-  const user=await User.findById(userId).select("-password -reset_token -reset_token_expiry -__v").populate("market_id","market_name market_email")
+  const user = await User.findById(userId).select("-password -reset_token -reset_token_expiry -__v").populate("market_id", "market_name market_email")
 
-  if(!user)
-  {
-    throw new ApiError(404,"User not found")
+  if (!user) {
+    throw new ApiError(404, "User not found")
   }
 
-   if (user.status !== "active") {
-      throw new ApiError(
-        403,
-        "Please accept invitation before accessing your profile"
-      );
-    }
+  if (user.status !== "active") {
+    throw new ApiError(
+      403,
+      "Please accept invitation before accessing your profile"
+    );
+  }
 
 
-    const responseData = {
-      user: {
-        name: user.name,
-        username: user.username,
-        email: user.email,
-        phone: user.phone,
-        status: user.status,
-        role: user.customRole || user.builtInRole,
-        permissions: user.permissions || [],
-        assignedShop_id: user.assignedShop_id,
-        profile_image: user.profile_image,
-        address: user.address,
-      },
-      market: user.market_id
-        ? {
-            id: (user.market_id as any)._id,
-            name: (user.market_id as any).market_name,
-            email: (user.market_id as any).market_email
-          }
-        : null,
-    };
+  const responseData = {
+    user: {
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      phone: user.phone,
+      status: user.status,
+      role: user.customRole || user.builtInRole,
+      permissions: user.permissions || [],
+      assignedShops_id: user.assignedShops_id,
+      profile_image: user.profile_image,
+      address: user.address,
+    },
+    market: user.market_id
+      ? {
+        id: (user.market_id as any)._id,
+        name: (user.market_id as any).market_name,
+        email: (user.market_id as any).market_email
+      }
+      : null,
+  };
   return res.status(200)
-  .json(new ApiResponse(200,"User details fetched successfully",responseData));
+    .json(new ApiResponse(200, "User details fetched successfully", responseData));
 
 
 })
 
-export const InviteUser = asyncHandler(async(req:Request, res:Response)=>{
+export const InviteUser = asyncHandler(async (req: Request, res: Response) => {
 
-    const {email,role,permissions}=req.body;
-    const inviter=req.user;   //authMiddleware added "req.user"
+  const { email, role, permissions } = req.body;
+  const inviter = req.user;   //authMiddleware added "req.user"
 
-    if(!inviter)  throw new ApiError(401,"Unauthorized");
+  if (!inviter) throw new ApiError(401, "Unauthorized");
 
-    if(!email || !role || !Array.isArray(permissions) || permissions.length===0)
-    {
-      throw new ApiError(400,"Email, role and permissions are required");
-    }
+  if (!email || !role || !Array.isArray(permissions) || permissions.length === 0) {
+    throw new ApiError(400, "Email, role and permissions are required");
+  }
 
-     validatePermissionsExist(permissions);
+  validatePermissionsExist(permissions);
   preventPermissionEscalation(
     inviter.permissions,
     permissions,
     inviter.isSuperAdmin
   );
 
-    const userExists=await User.findOne({
-      email,
-      market_id:inviter.marketId
-    })
+  const userExists = await User.findOne({
+    email,
+    market_id: inviter.marketId
+  })
 
-    if(userExists) throw new ApiError(400,"User already exists");
-    
-    //check if active invite already exists
-    const inviteExists=await Invite.findOne({
-      email,
-      market_id:inviter.marketId,
-      status:"invited"
-    });
+  if (userExists) throw new ApiError(400, "User already exists");
 
-    if(inviteExists) throw new ApiError(400,"Invite already sent")
+  //check if active invite already exists
+  const inviteExists = await Invite.findOne({
+    email,
+    market_id: inviter.marketId,
+    status: "invited"
+  });
 
-      //for testing
-      //const invite_token = "55550002"
-      const invite_token = crypto.randomBytes(32).toString("hex");
+  if (inviteExists) throw new ApiError(400, "Invite already sent")
 
-      await Invite.create({
-        email,
-        role,
-        permissions,  
-        market_id:inviter.marketId,
-        invited_by:inviter.userId,
-        invite_token,
-        status:"invited",
-        expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000),
+  //for testing
+  //const invite_token = "55550002"
+  const invite_token = crypto.randomBytes(32).toString("hex");
+
+  await Invite.create({
+    email,
+    role,
+    permissions,
+    market_id: inviter.marketId,
+    invited_by: inviter.userId,
+    invite_token,
+    status: "invited",
+    expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000),
 
 
-      })
+  })
 
-      const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${invite_token}`;
+  const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${invite_token}`;
 
   // sendEmail(inviteLink)
 
@@ -400,33 +395,33 @@ export const AcceptInvite = asyncHandler(async (req: Request, res: Response) => 
     throw new ApiError(400, "Invalid or expired invite");
   }
 
-   const usernameExists = await User.findOne({ username });
+  const usernameExists = await User.findOne({ username });
   if (usernameExists) {
     throw new ApiError(400, "Username already taken");
   }
 
   await User.create({
-    email:invite.email,
+    email: invite.email,
     name,
     username,
     password,
-    market_id:invite.market_id,
-    customRole:invite.role,
-    permissions:invite.permissions,
-    createdBy:invite.invited_by,      //who invited (admin/manager) 
-    status:"active",
-    isActive:true,
+    market_id: invite.market_id,
+    customRole: invite.role,
+    permissions: invite.permissions,
+    createdBy: invite.invited_by,      //who invited (admin/manager) 
+    status: "active",
+    isActive: true,
 
   })
 
-  invite.status="accepted"  
-  invite.expires_at = null;        
-  invite.accepted_at=new Date();
+  invite.status = "accepted"
+  invite.expires_at = null;
+  invite.accepted_at = new Date();
   await invite.save();
 
-  res.json(new ApiResponse(200,"Invite accepted successfully"))
-    
-    
+  res.json(new ApiResponse(200, "Invite accepted successfully"))
+
+
 
 });
 
@@ -450,39 +445,38 @@ export const DeclineInvite = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, "Invitation declined"));
 });
 
-export const ListUsers=asyncHandler(async(req:Request,res:Response)=>{
-   if (!req.user) {
+export const ListUsers = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) {
     throw new ApiError(401, "Unauthorized");
   }
 
-  const { page = "1",  role } = req.query;
+  const { page = "1", role } = req.query;
 
   //identify the page number 
-  const pageNumber=Math.max(parseInt(page as string,10),1);    //eg pageNumber=3
+  const pageNumber = Math.max(parseInt(page as string, 10), 1);    //eg pageNumber=3
 
   //how many records to skip identify using pageNumber
   //pageNumber=3   skip=(3-1)*10
-  const skip=(pageNumber-1)*10;   // 10 here is the limit
-  
-  const limitNumber=10;   //fixed 10 number limit
+  const skip = (pageNumber - 1) * 10;   // 10 here is the limit
 
-  const filter:any={
-    market_id:req.user.marketId
+  const limitNumber = 10;   //fixed 10 number limit
+
+  const filter: any = {
+    market_id: req.user.marketId
   };
 
-  
-// ---------------------------
+
+  // ---------------------------
   // Visibility rules
   // ---------------------------
   // Admin / SuperAdmin -> see all users in market
   // Manager -> see only users created / invited by them
 
-  if(req.user.builtInRole==="manager")
-  {
-    filter.createdBy=req.user.userId
+  if (req.user.builtInRole === "manager") {
+    filter.createdBy = req.user.userId
   }
 
-    if (role) {
+  if (role) {
     filter.$or = [
       { builtInRole: role },
       { customRole: role },
@@ -493,30 +487,30 @@ export const ListUsers=asyncHandler(async(req:Request,res:Response)=>{
   //running two queries at the same time 
   //fetches user data and count of users based on filter
 
-  const [users,total]=await Promise.all([             //first value will be assigned to 'users' and second value to 'totals' 
-User.find(filter)
-.select("_id name username email phone status builtInRole customRole assignedShop_id createdAt")
-.populate("assignedShop_id","name")
-.sort({createdAt:-1})     //sort based on createdAt in descending order
-.skip(skip)               //skip this many number of records
-.limit(10)
+  const [users, total] = await Promise.all([             //first value will be assigned to 'users' and second value to 'totals' 
+    User.find(filter)
+      .select("_id name market_id username email phone status builtInRole customRole assignedShops_id createdAt")
+      .populate("assignedShops_id", "name")
+      .sort({ createdAt: -1 })     //sort based on createdAt in descending order
+      .skip(skip)               //skip this many number of records
+      .limit(10)
 
-,
+    ,
 
-User.countDocuments(filter)     //count the user documents that match the given filter
-  ]); 
+    User.countDocuments(filter)     //count the user documents that match the given filter
+  ]);
 
-  const totalPages=Math.ceil(total/10);
-  const  from =total===0 ? 0 : skip+1;
-  const to= Math.min(skip+10 ,  total);
+  const totalPages = Math.ceil(total / 10);
+  const from = total === 0 ? 0 : skip + 1;
+  const to = Math.min(skip + 10, total);
 
-  const pagination={
+  const pagination = {
     total,
-    page:pageNumber,
-    limit:10,
+    page: pageNumber,
+    limit: 10,
     totalPages,
-    hasNextPage:pageNumber<totalPages,
-    hasPrevPage:pageNumber>1,
+    hasNextPage: pageNumber < totalPages,
+    hasPrevPage: pageNumber > 1,
     from,
     to
   };
@@ -524,24 +518,25 @@ User.countDocuments(filter)     //count the user documents that match the given 
   const responseUsers = users.map((u) => ({
     id: u._id,
     name: u.name,
+    market_id: u.market_id,
     username: u.username,
     email: u.email,
     phone: u.phone,
     status: u.status,
     role: u.customRole || u.builtInRole,
-    assignedShop: u.assignedShop_id
-      ? {
-          id: (u.assignedShop_id as any)._id,
-          name: (u.assignedShop_id as any).name,
-        }
-      : null,
+    assignedShops_id: u.assignedShops_id
+      ? (u.assignedShops_id as any[]).map((shop: any) => ({
+        id: shop._id,
+        name: shop.name,
+      }))
+      : [],
     createdAt: u.createdAt,
   }));
 
   return res.status(200).json(
 
-    new ApiResponse(200,"Users fetched successfully",{
-      users:responseUsers,
+    new ApiResponse(200, "Users fetched successfully", {
+      users: responseUsers,
       pagination
     })
   );
@@ -551,106 +546,105 @@ User.countDocuments(filter)     //count the user documents that match the given 
 
 
 
-export const UpdateMyProfile=asyncHandler(async (req:Request,res:Response)=>{
+export const UpdateMyProfile = asyncHandler(async (req: Request, res: Response) => {
 
   //user authenticated
   const loggedInUser = req.user;
-    if (!loggedInUser) {
-      throw new ApiError(401, "Unauthorized");
-    }
+  if (!loggedInUser) {
+    throw new ApiError(401, "Unauthorized");
+  }
 
-    const result = updateMeValidator.safeParse(req.body);
+  const result = updateMeValidator.safeParse(req.body);
 
-     if (!result.success) {
-      const errors = result.error.issues.map(
-        err => `${err.path.join(".")}: ${err.message}`
-      );
-      throw new ApiError(400, `Validation error: ${errors.join(", ")}`);
-    }
-
-
-    const updatedData:updateMyProfileDto=result.data;
-
-     //  Prevent empty update
-    if (Object.keys(updatedData).length === 0) {
-      throw new ApiError(400, "No fields provided to update");
-    }
-
-    const updatedUser=await User.findByIdAndUpdate(
-      loggedInUser.userId,
-      {$set:updatedData},
-      {new:true}
-    ).select(
-      "_id name email phone address profile_image builtInRole createdAt")
-
-      if(!updatedUser)
-      {
-        throw new ApiError(404,"User not found")  
-      }
-
-       return res.status(200).json(
-      new ApiResponse(200, "Profile details updated successfully", {
-        user: updatedUser,
-      })
+  if (!result.success) {
+    const errors = result.error.issues.map(
+      err => `${err.path.join(".")}: ${err.message}`
     );
+    throw new ApiError(400, `Validation error: ${errors.join(", ")}`);
+  }
+
+
+  const updatedData: updateMyProfileDto = result.data;
+
+  //  Prevent empty update
+  if (Object.keys(updatedData).length === 0) {
+    throw new ApiError(400, "No fields provided to update");
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(
+    loggedInUser.userId,
+    { $set: updatedData },
+    { new: true }
+  ).select(
+    "_id name email phone address profile_image builtInRole createdAt")
+
+  if (!updatedUser) {
+    throw new ApiError(404, "User not found")
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, "Profile details updated successfully", {
+      user: updatedUser,
+    })
+  );
 
 
 })
 
 
-export const DisableUser=asyncHandler(async (req:Request,res:Response)=>{
+export const DisableUser = asyncHandler(async (req: Request, res: Response) => {
 
-const loggedInUser = req.user;
-    if (!loggedInUser) {
-      throw new ApiError(401, "Unauthorized");
-    }
+  const loggedInUser = req.user;
+  if (!loggedInUser) {
+    throw new ApiError(401, "Unauthorized");
+  }
 
-    const { userId } = req.params;
+  const { userId } = req.params;
 
-    //Prevent self-disable
-    if (loggedInUser.userId === userId) {
-      throw new ApiError(400, "You cannot disable your own account");
-    }
+  //Prevent self-disable
+  if (loggedInUser.userId === userId) {
+    throw new ApiError(400, "You cannot disable your own account");
+  }
 
-    const userToDisable = await User.findById(userId);
+  const userToDisable = await User.findById(userId);
 
-    if (!userToDisable) {
-      throw new ApiError(404, "User not found");
-    }
-  
-    // Must belong to same market
-    if (userToDisable.market_id.toString() !== loggedInUser.marketId) {
-      throw new ApiError(403, "Access denied");
-    }
+  if (!userToDisable) {
+    throw new ApiError(404, "User not found");
+  }
 
-      // Manager visibility rule (manager can disable user that they have invited only)
-    if (
-      loggedInUser.builtInRole === "manager" &&
-      userToDisable.createdBy?.toString() !== loggedInUser.userId
-    ) {
-      throw new ApiError(403, "You can disable only users created/invited by you");
-    }
+  // Must belong to same market
+  if (userToDisable.market_id.toString() !== loggedInUser.marketId) {
+    throw new ApiError(403, "Access denied");
+  }
+
+  // Manager visibility rule (manager can disable user that they have invited only)
+  if (
+    loggedInUser.builtInRole === "manager" &&
+    userToDisable.createdBy?.toString() !== loggedInUser.userId
+  ) {
+    throw new ApiError(403, "You can disable only users created/invited by you");
+  }
 
 
-    // Already disabled?
-    if (userToDisable.status === "disabled") {
-      throw new ApiError(400, "User is already disabled");
-    }
+  // Already disabled?
+  if (userToDisable.status === "disabled") {
+    throw new ApiError(400, "User is already disabled");
+  }
 
-    userToDisable.isActive=false;
-    userToDisable.status="disabled";
+  userToDisable.isActive = false;
+  userToDisable.status = "disabled";
 
-    await userToDisable.save();
+  await userToDisable.save();
 
-    return res.status(200).json(
-      new ApiResponse(200, "User disabled successfully")
-    );
+  return res.status(200).json(
+    new ApiResponse(200, "User disabled successfully")
+  );
 })
 
 
-export const EnableUser=asyncHandler(
-  async(req:Request,res:Response)=>{
-const loggedInUser = req.user;
+export const EnableUser = asyncHandler(
+  async (req: Request, res: Response) => {
+    const loggedInUser = req.user;
     if (!loggedInUser) {
       throw new ApiError(401, "Unauthorized");
     }
@@ -687,13 +681,13 @@ const loggedInUser = req.user;
       new ApiResponse(200, "User enabled successfully")
     );
 
-})
+  })
 
 
 export const updateUserById = asyncHandler(async (req: Request, res: Response) => {
   const loggedInUser = req.user;
-  const {targetUserId}=req.params;
-  
+  const { targetUserId } = req.params;
+
 
   if (!loggedInUser) {
     throw new ApiError(401, "Unauthorized");
@@ -705,9 +699,8 @@ export const updateUserById = asyncHandler(async (req: Request, res: Response) =
 
   const updates = req.body as AdminUpdateUserDto;
 
-  if(Object.keys(updates).length===0)
-  {
-    throw new ApiError(400,"Updated data is required")
+  if (Object.keys(updates).length === 0) {
+    throw new ApiError(400, "Updated data is required")
   }
 
   // Prevent self-update
@@ -757,20 +750,28 @@ export const updateUserById = asyncHandler(async (req: Request, res: Response) =
     );
   }
 
-  // 4. Validate and check assignedShop_id if provided
-  if (updates.assignedShop_id !== undefined && updates.assignedShop_id !== null) {
-    if (!mongoose.Types.ObjectId.isValid(updates.assignedShop_id)) {
-      throw new ApiError(400, "Invalid shop ID format");
+  // 4. Validate and check assignedShops_id if provided
+  if (updates.assignedShops_id !== undefined && updates.assignedShops_id !== null) {
+    if (!Array.isArray(updates.assignedShops_id)) {
+      throw new ApiError(400, "assignedShops_id must be an array");
     }
-    
-    // Verify shop exists and belongs to same market
-    const shop = await Shop.findOne({
-      _id: updates.assignedShop_id,
-      market_id: loggedInUser.marketId,
-    });
 
-    if (!shop) {
-      throw new ApiError(404, "Shop not found or not in your market");
+    for (const shopId of updates.assignedShops_id) {
+      if (!mongoose.Types.ObjectId.isValid(shopId as string)) {
+        throw new ApiError(400, "Invalid shop ID format");
+      }
+    }
+
+    // Verify shop exists and belongs to same market
+    if (updates.assignedShops_id.length > 0) {
+      const shops = await Shop.find({
+        _id: { $in: updates.assignedShops_id },
+        market_id: loggedInUser.marketId,
+      });
+
+      if (shops.length !== updates.assignedShops_id.length) {
+        throw new ApiError(404, "One or more shops not found or not in your market");
+      }
     }
   }
 
@@ -799,8 +800,8 @@ export const updateUserById = asyncHandler(async (req: Request, res: Response) =
     targetUser.permissions = updates.permissions;
   }
 
-  if (updates.assignedShop_id !== undefined) {
-    targetUser.assignedShop_id = updates.assignedShop_id;
+  if (updates.assignedShops_id !== undefined) {
+    targetUser.assignedShops_id = updates.assignedShops_id as any;
   }
 
   if (updates.status !== undefined) {
@@ -834,7 +835,7 @@ export const updateUserByEmail = asyncHandler(async (req: Request, res: Response
     throw new ApiError(401, "Unauthorized");
   }
 
-  if (!targetUserEmail || Object.keys(updates).length===0) {
+  if (!targetUserEmail || Object.keys(updates).length === 0) {
     throw new ApiError(400, "Target user email and update data are required");
   }
 
@@ -883,20 +884,28 @@ export const updateUserByEmail = asyncHandler(async (req: Request, res: Response
     );
   }
 
-  // 4. Validate and check assignedShop_id if provided
-  if (updates.assignedShop_id !== undefined && updates.assignedShop_id !== null) {
-    if (!mongoose.Types.ObjectId.isValid(updates.assignedShop_id)) {
-      throw new ApiError(400, "Invalid shop ID format");
+  // 4. Validate and check assignedShops_id if provided
+  if (updates.assignedShops_id !== undefined && updates.assignedShops_id !== null) {
+    if (!Array.isArray(updates.assignedShops_id)) {
+      throw new ApiError(400, "assignedShops_id must be an array");
     }
-    
-    // Verify shop exists and belongs to same market
-    const shop = await Shop.findOne({
-      _id: updates.assignedShop_id,
-      market_id: loggedInUser.marketId,
-    });
 
-    if (!shop) {
-      throw new ApiError(404, "Shop not found or not in your market");
+    for (const shopId of updates.assignedShops_id) {
+      if (!mongoose.Types.ObjectId.isValid(shopId as string)) {
+        throw new ApiError(400, "Invalid shop ID format");
+      }
+    }
+
+    // Verify shop exists and belongs to same market
+    if (updates.assignedShops_id.length > 0) {
+      const shops = await Shop.find({
+        _id: { $in: updates.assignedShops_id },
+        market_id: loggedInUser.marketId,
+      });
+
+      if (shops.length !== updates.assignedShops_id.length) {
+        throw new ApiError(404, "One or more shops not found or not in your market");
+      }
     }
   }
 
@@ -925,8 +934,8 @@ export const updateUserByEmail = asyncHandler(async (req: Request, res: Response
     targetUser.permissions = updates.permissions;
   }
 
-  if (updates.assignedShop_id !== undefined) {
-    targetUser.assignedShop_id = updates.assignedShop_id;
+  if (updates.assignedShops_id !== undefined) {
+    targetUser.assignedShops_id = updates.assignedShops_id as any;
   }
 
   if (updates.status !== undefined) {
