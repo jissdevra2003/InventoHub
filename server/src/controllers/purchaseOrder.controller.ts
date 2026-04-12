@@ -25,8 +25,9 @@ export const createPurchaseOrder = asyncHandler(async (req: Request, res: Respon
 
     const data: CreatePurchaseOrderDto = result.data;
 
-    // Strict shop access check for Managers
-    if (user.builtInRole === "manager" && !user.assignedShopsId.includes(data.shop_id.toString())) {
+    // Strict shop access check for Managers and Staff
+    const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+    if (!ownerAccess && user.builtInRole !== "admin" && !user.assignedShopsId.includes(data.shop_id.toString())) {
         throw new ApiError(403, "Access denied. You cannot create a purchase order for a shop you are not assigned to.");
     }
 
@@ -53,7 +54,7 @@ export const createPurchaseOrder = asyncHandler(async (req: Request, res: Respon
         .lean();
     
     const nextCount = (lastPO && lastPO.count ? lastPO.count : 0) + 1;
-    const purchaseNumber = `PO-${nextCount.toString().padStart(5, "0")}`;
+    const purchaseNumber = `PO-${nextCount.toString().padStart(8, "0")}`;
 
     // Create the draft PO
     const purchaseOrder = await PurchaseOrder.create({
@@ -90,8 +91,9 @@ export const listPurchaseOrders = asyncHandler(async (req: Request, res: Respons
 
     if (status) filter.status = status;
 
-    // Restrict visibility for managers
-    if (user.builtInRole === "manager") {
+    // Restrict visibility for managers and staff
+    const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+    if (!ownerAccess && user.builtInRole !== "admin") {
         if (shopId && !user.assignedShopsId.includes(shopId)) {
             throw new ApiError(403, "Access denied for this shop.");
         }
@@ -149,7 +151,8 @@ export const getPurchaseOrderById = asyncHandler(async (req: Request, res: Respo
         throw new ApiError(404, "Purchase Order not found");
     }
 
-    if (user.builtInRole === "manager" && !user.assignedShopsId.includes(purchaseOrder.shop_id.toString())) {
+    const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+    if (!ownerAccess && user.builtInRole !== "admin" && !user.assignedShopsId.includes(purchaseOrder.shop_id.toString())) {
         throw new ApiError(403, "Access denied. You are not assigned to this shop's purchase order.");
     }
 
@@ -180,7 +183,8 @@ export const receivePurchaseOrder = asyncHandler(async (req: Request, res: Respo
             throw new ApiError(404, "Purchase Order not found");
         }
 
-        if (user.builtInRole === "manager" && !user.assignedShopsId.includes(purchaseOrder.shop_id.toString())) {
+        const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+        if (!ownerAccess && user.builtInRole !== "admin" && !user.assignedShopsId.includes(purchaseOrder.shop_id.toString())) {
             throw new ApiError(403, "Access denied. You cannot receive purchase orders for a shop you are not assigned to.");
         }
 
@@ -273,7 +277,8 @@ export const cancelPurchaseOrder = asyncHandler(async (req: Request, res: Respon
         throw new ApiError(404, "Purchase Order not found");
     }
 
-    if (user.builtInRole === "manager" && !user.assignedShopsId.includes(purchaseOrder.shop_id.toString())) {
+    const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+    if (!ownerAccess && user.builtInRole !== "admin" && !user.assignedShopsId.includes(purchaseOrder.shop_id.toString())) {
         throw new ApiError(403, "Access denied. You cannot cancel purchase orders for a shop you are not assigned to.");
     }
 
