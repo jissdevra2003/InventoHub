@@ -4,7 +4,7 @@ import { mailTransporter } from "./mail";
 
 interface SendEmailOptions
 {
-     to: string;
+  to: string;
   subject: string;
   html: string;
 }
@@ -12,8 +12,7 @@ interface SendEmailOptions
 export const sendEmail=async ({to,subject,html}:SendEmailOptions)=>{
 
     await mailTransporter.sendMail({
-
-        from:`"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_EMAIl}>`,
+        from:`"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_EMAIL}>`,
         to,
         subject,
         html

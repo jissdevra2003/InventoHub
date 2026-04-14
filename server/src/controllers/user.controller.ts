@@ -469,11 +469,11 @@ export const ListUsers = asyncHandler(async (req: Request, res: Response) => {
   // ---------------------------
   // Visibility rules
   // ---------------------------
-  // Admin / SuperAdmin -> see all users in market
-  // Manager -> see only users created / invited by them
-
-  if (req.user.builtInRole === "manager") {
-    filter.createdBy = req.user.userId
+  // Admin / SuperAdmin → see all users in market
+  // Manager & Staff → see only users created / invited by them
+  const ownerAccess = req.user.isSuperAdmin && req.user.permissions?.includes("*");
+  if (!ownerAccess && req.user.builtInRole !== "admin") {
+    filter.createdBy = req.user.userId;
   }
 
   if (role) {
@@ -617,9 +617,10 @@ export const DisableUser = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(403, "Access denied");
   }
 
-  // Manager visibility rule (manager can disable user that they have invited only)
+  // Manager & Staff visibility rule: can only disable users they invited
+  const ownerAccessDisable = loggedInUser.isSuperAdmin && loggedInUser.permissions?.includes("*");
   if (
-    loggedInUser.builtInRole === "manager" &&
+    !ownerAccessDisable && loggedInUser.builtInRole !== "admin" &&
     userToDisable.createdBy?.toString() !== loggedInUser.userId
   ) {
     throw new ApiError(403, "You can disable only users created/invited by you");
@@ -661,9 +662,10 @@ export const EnableUser = asyncHandler(
       throw new ApiError(403, "Access denied");
     }
 
-    // Manager visibility rule
+    // Manager & Staff visibility rule: can only enable users they invited
+    const ownerAccessEnable = loggedInUser.isSuperAdmin && loggedInUser.permissions?.includes("*");
     if (
-      loggedInUser.builtInRole === "manager" &&
+      !ownerAccessEnable && loggedInUser.builtInRole !== "admin" &&
       userToEnable.createdBy?.toString() !== loggedInUser.userId
     ) {
       throw new ApiError(403, "You can enable only users created/invited by you");

@@ -56,8 +56,8 @@ const SaleItemSchema = new Schema<ISaleItem>(
 
 const SalesOrderSchema = new Schema<ISalesOrder>(
   {
-    sale_number: { type: String, required: true, unique: true, index: true, trim: true },
-    count: { type: Number, default: 0 },
+    sale_number: { type: String, required: true, /*unique: true,*/ index: true, trim: true },
+    count: { type: Number, default: 0 },//unique is removed because sale number will increament with respect to market and can be duplicate among markets
 
     market_id: { type: Schema.Types.ObjectId, ref: "Market", required: true, index: true },
     shop_id: { type: Schema.Types.ObjectId, ref: "Shop", required: true },
@@ -100,7 +100,7 @@ SalesOrderSchema.pre<ISalesOrder>("validate", async function (next) {
         const price = Number(it.selling_price || 0);
         const lineTotal = Number((qty * price).toFixed(2));
         it.total = lineTotal;
-        subtotal += lineTotal; 
+        subtotal += lineTotal;
       }
       this.subtotal = Number(subtotal.toFixed(2));
       this.total_amount = Number(this.subtotal.toFixed(2));
@@ -115,7 +115,7 @@ SalesOrderSchema.pre<ISalesOrder>("validate", async function (next) {
       const last = await Model.findOne({ market_id: this.market_id }).sort({ count: -1 }).select("count").lean();
       const nextCount = (last && last.count ? last.count : 0) + 1;
       this.count = nextCount;
-      this.sale_number = `SO-${nextCount.toString().padStart(5, "0")}`;
+      this.sale_number = `SO-${nextCount.toString().padStart(8, "0")}`;
     }
 
     next();
@@ -127,6 +127,7 @@ SalesOrderSchema.pre<ISalesOrder>("validate", async function (next) {
 /* ----------------- Indexes ----------------- */
 
 SalesOrderSchema.index({ market_id: 1, shop_id: 1, createdAt: -1 });
+SalesOrderSchema.index({ market_id: 1, sale_number: 1 }, { unique: true });
 
 /* ----------------- Export ----------------- */
 

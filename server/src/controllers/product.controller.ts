@@ -159,14 +159,12 @@ export const assignProductToShop = asyncHandler(
       throw new ApiError(404, "Shop not found in this market");
     }
 
-    // 3. Manager restriction: must be assigned to the shop
-    if (
-      user.builtInRole === "manager" &&
-      !shop.managers.some((id: Types.ObjectId) => id.toString() === user.userId)
-    ) {
+    // 3. Manager and Staff restriction: must be assigned to the shop
+    const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+    if (!ownerAccess && user.builtInRole !== "admin" && !user.assignedShopsId.includes(shopId.toString())) {
       throw new ApiError(
         403,
-        "Managers can assign products only to shops they are assigned to"
+        "Access denied. You can only assign products to shops you are assigned to."
       );
     }
 

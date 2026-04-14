@@ -15,7 +15,8 @@ export const updateMarketProfile = asyncHandler(async (req: Request, res: Respon
     if (!user) throw new ApiError(401, "Unauthorized");
 
     // SuperAdmin-only check
-    if (!user.isSuperAdmin) {
+    const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+    if (!ownerAccess) {
         throw new ApiError(403, "Only the Super Admin can update the market profile.");
     }
 

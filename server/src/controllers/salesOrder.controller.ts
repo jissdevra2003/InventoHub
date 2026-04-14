@@ -27,8 +27,9 @@ throw new ApiError(400, `Validation error: ${errors.join(", ")}`);
 
 const data: CreateSalesOrderDto = result.data;
 
-// Strict shop access check for Managers
-if (user.builtInRole === "manager" && !user.assignedShopsId.includes(data.shop_id.toString())) {
+// Strict shop access check for Managers and Staff
+const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+if (!ownerAccess && user.builtInRole !== "admin" && !user.assignedShopsId.includes(data.shop_id.toString())) {
 throw new ApiError(403, "Access denied. You cannot create a sale for a shop you are not assigned to.");
 }
 
@@ -110,6 +111,8 @@ created_by: user.userId,
 // 4. Update StockLedger entries with the SO reference_id
 await StockLedger.updateMany(
 {
+market_id: user.marketId,
+shop_id: data.shop_id,
 user_id: user.userId,
 change_type: "sales_order",
 reason: "Sale created",
@@ -159,8 +162,9 @@ if (startDate) filter.createdAt.$gte = new Date(startDate);
 if (endDate) filter.createdAt.$lte = new Date(endDate);
 }
 
-// Restrict visibility for managers (same pattern as PO)
-if (user.builtInRole === "manager") {
+// Restrict visibility for managers and staff (same pattern as PO)
+const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+if (!ownerAccess && user.builtInRole !== "admin") {
 if (shopId && !user.assignedShopsId.includes(shopId)) {
 throw new ApiError(403, "Access denied for this shop.");
 }
@@ -216,8 +220,9 @@ if (!salesOrder) {
 throw new ApiError(404, "Sales Order not found");
 }
 
-// Manager can only view SOs from assigned shops
-if (user.builtInRole === "manager" && !user.assignedShopsId.includes(salesOrder.shop_id.toString())) {
+// Manager and Staff can only view SOs from assigned shops
+const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+if (!ownerAccess && user.builtInRole !== "admin" && !user.assignedShopsId.includes(salesOrder.shop_id.toString())) {
 throw new ApiError(403, "Access denied. You are not assigned to this shop.");
 }
 
@@ -249,8 +254,9 @@ if (!salesOrder) {
 throw new ApiError(404, "Sales Order not found");
 }
 
-// Manager shop isolation
-if (user.builtInRole === "manager" && !user.assignedShopsId.includes(salesOrder.shop_id.toString())) {
+// Manager and Staff shop isolation
+const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+if (!ownerAccess && user.builtInRole !== "admin" && !user.assignedShopsId.includes(salesOrder.shop_id.toString())) {
 throw new ApiError(403, "Access denied. You cannot cancel sales orders for a shop you are not assigned to.");
 }
 
@@ -342,8 +348,9 @@ if (startDate) matchFilter.createdAt.$gte = new Date(startDate);
 if (endDate) matchFilter.createdAt.$lte = new Date(endDate);
 }
 
-// Shop filter + manager isolation
-if (user.builtInRole === "manager") {
+// Shop filter + Admin bypass
+const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+if (!ownerAccess && user.builtInRole !== "admin") {
 if (shopId && !user.assignedShopsId.includes(shopId)) {
 throw new ApiError(403, "Access denied for this shop.");
 }

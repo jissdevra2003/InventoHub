@@ -29,9 +29,10 @@ export const listInventoryByShop = asyncHandler(
       throw new ApiError(404, "Shop not found");
     }
 
-    // 2. Manager can access only assigned shops
+    // 2. Manager and Staff can access only assigned shops
+    const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
     if (
-      user.builtInRole === "manager" &&
+      !ownerAccess && user.builtInRole !== "admin" &&
       !user.assignedShopsId.includes(shopId.toString())
     ) {
       throw new ApiError(403, "Access denied for this shop");
@@ -92,7 +93,8 @@ export const increaseInventory = asyncHandler(
 
     const { shopId, productId, quantity, reason }: UpdateInventoryDto = result.data;
 
-    if (user.builtInRole === "manager" && !user.assignedShopsId.includes(shopId.toString())) {
+    const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+    if (!ownerAccess && user.builtInRole !== "admin" && !user.assignedShopsId.includes(shopId.toString())) {
       throw new ApiError(403, "Access denied. You are not assigned to this shop.");
     }
 
@@ -153,7 +155,8 @@ export const decreaseInventory = asyncHandler(
 
     const { shopId, productId, quantity, reason }: UpdateInventoryDto = result.data;
 
-    if (user.builtInRole === "manager" && !user.assignedShopsId.includes(shopId.toString())) {
+    const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+    if (!ownerAccess && user.builtInRole !== "admin" && !user.assignedShopsId.includes(shopId.toString())) {
       throw new ApiError(403, "Access denied. You are not assigned to this shop.");
     }
 
@@ -209,7 +212,8 @@ export const listLowStockInventory = asyncHandler(
       $expr: { $lte: ["$quantity", "$min_stock"] }
     };
 
-    if (user.builtInRole === "manager") {
+    const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+    if (!ownerAccess && user.builtInRole !== "admin") {
       filter.shop_id = { $in: user.assignedShopsId };
     }
 
