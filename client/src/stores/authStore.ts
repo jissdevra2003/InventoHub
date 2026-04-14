@@ -22,13 +22,13 @@ const useAuthStore = create<AuthState>((set) => ({
 
   // ── Log in ──
   login: async (email, password) => {
-    const res = await api.post("/api/auth/login", { email, password });
+    const res = await api.post("/api/users/login", { email, password });
     set({ user: res.data.data.user });
   },
 
   // ── Log out ──
   logout: async () => {
-    await api.post("/api/auth/logout");
+    await api.post("/api/users/logout");
     set({ user: null });
   },
 
@@ -36,7 +36,7 @@ const useAuthStore = create<AuthState>((set) => ({
   // Called once in ProtectedRoute to see if the cookie is still valid.
   fetchUser: async () => {
     try {
-      const res = await api.get("/api/auth/me");
+      const res = await api.get("/api/users/me");
       set({ user: res.data.data.user, isLoading: false });
     } catch {
       set({ user: null, isLoading: false });

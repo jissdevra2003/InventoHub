@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { ArrowRight, ArrowLeft, CheckCircle2, Boxes, AlertCircle } from "lucide-react";
 
 import api from "../lib/api";
@@ -14,67 +15,13 @@ import {
 
 import Step1Owner from "../components/register/Step1Owner";
 import Step2Market from "../components/register/Step2Market";
+import BrandingPanel from "../components/auth/BrandingPanel";
 import Button from "../components/ui/Button";
 
 
 // ────────────────────────────────────────────────────────
 // SMALL HELPER COMPONENTS (keep this file easy to scan)
 // ────────────────────────────────────────────────────────
-
-/** Left-side branding panel (only visible on large screens). */
-function BrandingPanel() {
-    return (
-        <div className="hidden lg:flex lg:w-[45%] xl:w-[40%] flex-col justify-between bg-gradient-to-br from-primary-950 via-primary-900 to-primary-800 p-10 text-white relative overflow-hidden">
-
-            {/* Decorative blurs */}
-            <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-primary-700/20 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-10 -left-10 h-60 w-60 rounded-full bg-primary-600/15 blur-2xl" />
-
-            {/* Logo */}
-            <div className="relative z-10">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
-                        <Boxes className="h-6 w-6 text-primary-200" />
-                    </div>
-                    <span className="text-xl font-bold tracking-tight">InventoHub</span>
-                </div>
-            </div>
-
-            {/* Hero text */}
-            <div className="relative z-10 space-y-6">
-                <h1 className="text-4xl font-bold leading-tight xl:text-5xl">
-                    Manage your
-                    <br />
-                    <span className="bg-gradient-to-r from-primary-200 to-indigo-300 bg-clip-text text-transparent">
-                        inventory smarter
-                    </span>
-                </h1>
-                <p className="max-w-sm text-base leading-relaxed text-primary-200/80">
-                    Join thousands of businesses that trust InventoHub to streamline
-                    their stock management, from small shops to large enterprises.
-                </p>
-
-                {/* Feature chips */}
-                <div className="flex flex-wrap gap-3 pt-2">
-                    {["Multi-shop support", "Role-based access", "Real-time tracking"].map((feat) => (
-                        <span
-                            key={feat}
-                            className="rounded-full border border-primary-600/40 bg-primary-800/40 px-4 py-1.5 text-xs font-medium text-primary-200 backdrop-blur-sm"
-                        >
-                            {feat}
-                        </span>
-                    ))}
-                </div>
-            </div>
-
-            {/* Footer */}
-            <div className="relative z-10 text-xs text-primary-400">
-                © {new Date().getFullYear()} InventoHub. All rights reserved.
-            </div>
-        </div>
-    );
-}
-
 
 /** The 2-dot step indicator at the top of the form. */
 function StepIndicator({ currentStep }: { currentStep: number }) {
@@ -272,7 +219,18 @@ export default function Register() {
         <div className="flex min-h-screen">
 
             {/* LEFT — Branding (desktop only) */}
-            <BrandingPanel />
+            <BrandingPanel
+                headline={
+                    <>
+                        Manage your
+                        <br />
+                        <span className="bg-gradient-to-r from-primary-200 to-indigo-300 bg-clip-text text-transparent">
+                            inventory smarter
+                        </span>
+                    </>
+                }
+                subtext="Join thousands of businesses that trust InventoHub to streamline their stock management, from small shops to large enterprises."
+            />
 
             {/* RIGHT — The registration form */}
             <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 sm:px-12 lg:px-16">
@@ -337,9 +295,9 @@ export default function Register() {
                     {/* Sign-in link */}
                     <p className="mt-6 text-center text-sm text-text-secondary">
                         Already have an account?{" "}
-                        <a href="/login" className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+                        <Link to="/login" className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
                             Sign in
-                        </a>
+                        </Link>
                     </p>
                 </div>
             </div>
