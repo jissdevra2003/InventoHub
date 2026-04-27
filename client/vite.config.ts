@@ -14,7 +14,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://inventohub-backend-20we.onrender.com',
+        target: 'http://localhost:10000',
         changeOrigin: true,
       },
     },
