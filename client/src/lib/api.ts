@@ -3,7 +3,7 @@ import axios from "axios";
 // ─── API Client ───
 // Configured to point directly to the backend server
 const api = axios.create({
-    baseURL: "http://localhost:10000",
+    baseURL: "https://inventohub-backend-20we.onrender.com",
     headers: {
         "Content-Type": "application/json",
     },
