@@ -1,170 +1,214 @@
-import { useEffect, useState } from "react";
+import "./Dashboard.css";
 import { motion } from "framer-motion";
 import {
     Package,
-    Store,
-    AlertTriangle,
     DollarSign,
     TrendingUp,
-    ArrowUpRight,
-    ArrowDownRight,
-    Clock,
-    Loader2,
+    AlertTriangle,
+    Info,
 } from "lucide-react";
+import {
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    Legend,
+} from "recharts";
 
-import api from "../lib/api";
-import useAuthStore from "../stores/authStore";
 
-// ─── Types ──────────────────────────────────────────────
-interface DashboardStats {
-    totalProducts: number;
-    totalShops: number;
-    lowStockCount: number;
-    todaySales: {
-        revenue: number;
-        orders: number;
+// ─── Dummy Data ─────────────────────────────────────────
+
+const statsData = [
+    {
+        title: "Total Stock",
+        value: "14,352",
+        unit: "units",
+        change: "+3.1%",
+        positive: true,
+        icon: Package,
+        color: "#6366f1",      // indigo
+        bgColor: "#6366f115",
+    },
+    {
+        title: "Stock Value",
+        value: "$892,104",
+        unit: "",
+        change: "+1.2%",
+        positive: true,
+        icon: DollarSign,
+        color: "#10b981",      // emerald
+        bgColor: "#10b98115",
+    },
+    {
+        title: "Revenue (MTD)",
+        value: "$56,780",
+        unit: "",
+        change: "+15.8%",
+        positive: true,
+        icon: TrendingUp,
+        color: "#f43f5e",      // rose
+        bgColor: "#f43f5e15",
+    },
+    {
+        title: "Low Stock Alerts",
+        value: "28",
+        unit: "items",
+        change: "-3 items",
+        positive: false,
+        icon: AlertTriangle,
+        color: "#a855f7",      // purple
+        bgColor: "#a855f715",
+    },
+];
+
+// Generate 30 days of chart data
+const chartData = Array.from({ length: 30 }, (_, i) => {
+    const day = i + 1;
+    const baseOrders = 800 + Math.sin(day * 0.3) * 400 + Math.random() * 200;
+    const baseUnits = 1200 + Math.sin(day * 0.25) * 600 + Math.random() * 300;
+    return {
+        day: day.toString(),
+        orders: Math.round(baseOrders),
+        units: Math.round(baseUnits),
     };
-    recentActivity: ActivityItem[];
-}
+});
 
-interface ActivityItem {
-    _id: string;
-    change_type: "purchase_order" | "sales_order" | "adjustment" | "transfer" | "initial";
-    quantity_changed: number;
-    reason?: string;
-    createdAt: string;
-    product_id?: { name: string; sku: string };
-    shop_id?: { name: string };
-    user_id?: { name: string; email: string };
+// Special points
+chartData[9] = { day: "10", orders: 1800, units: 2450 };
+chartData[16] = { day: "17", orders: 1600, units: 2200 };
+chartData[24] = { day: "25", orders: 1900, units: 2450 };
+
+const stockMovements = [
+    {
+        id: "1",
+        itemName: "UltraWidget Pro",
+        sku: "SK-401",
+        type: "Inbound",
+        quantity: "+Wh-A",
+        quantityNum: 500,
+        date: "28 Oct 2023 10:46 AM",
+        status: "Received",
+        statusColor: "#10b981",
+    },
+    {
+        id: "2",
+        itemName: "NeoGadget X",
+        sku: "SK-402",
+        type: "Outbound",
+        quantity: "-120",
+        quantityNum: -120,
+        date: "28 Oct 2023 10:43 AM",
+        status: "Shipped",
+        statusColor: "#f59e0b",
+    },
+    {
+        id: "3",
+        itemName: "UltraWidget Pro",
+        sku: "SK-403",
+        type: "Outbound",
+        quantity: "-120",
+        quantityNum: -120,
+        date: "28 Oct 2023 10:33 AM",
+        status: "Shipped",
+        statusColor: "#f59e0b",
+    },
+];
+
+
+// ─── Custom Tooltip ─────────────────────────────────────
+
+function CustomTooltip({ active, payload, label }: any) {
+    if (!active || !payload?.length) return null;
+    return (
+        <div className="chart-tooltip">
+            <p className="chart-tooltip-label">Day {label}</p>
+            {payload.map((entry: any, idx: number) => (
+                <p key={idx} className="chart-tooltip-value" style={{ color: entry.color }}>
+                    {entry.name}: {entry.value.toLocaleString()}
+                </p>
+            ))}
+        </div>
+    );
 }
 
 
 // ─── Stat Card ──────────────────────────────────────────
+
 function StatCard({
     title,
     value,
-    subtitle,
+    unit,
+    change,
+    positive,
     icon: Icon,
     color,
+    bgColor,
     delay = 0,
 }: {
     title: string;
-    value: string | number;
-    subtitle?: string;
+    value: string;
+    unit: string;
+    change: string;
+    positive: boolean;
     icon: React.ElementType;
-    color: "indigo" | "emerald" | "amber" | "sky";
+    color: string;
+    bgColor: string;
     delay?: number;
 }) {
-    const palette = {
-        indigo: {
-            bg: "bg-primary-50",
-            icon: "text-primary-600",
-            ring: "ring-primary-100",
-        },
-        emerald: {
-            bg: "bg-emerald-50",
-            icon: "text-emerald-600",
-            ring: "ring-emerald-100",
-        },
-        amber: {
-            bg: "bg-amber-50",
-            icon: "text-amber-600",
-            ring: "ring-amber-100",
-        },
-        sky: {
-            bg: "bg-sky-50",
-            icon: "text-sky-600",
-            ring: "ring-sky-100",
-        },
-    }[color];
-
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay }}
-            className="group relative overflow-hidden rounded-2xl border border-border bg-surface p-6 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+            transition={{ duration: 0.5, delay, ease: "easeOut" }}
+            className="dashboard-stat-card"
         >
-            {/* Decorative gradient in top-right corner */}
-            <div className={`pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full ${palette.bg} opacity-60 blur-2xl transition-opacity group-hover:opacity-100`} />
-
-            <div className="relative flex items-start justify-between">
-                <div className="space-y-3">
-                    <p className="text-sm font-medium text-text-muted">{title}</p>
-                    <p className="text-3xl font-bold tracking-tight text-text-primary">
-                        {value}
-                    </p>
-                    {subtitle && (
-                        <p className="text-xs text-text-muted">{subtitle}</p>
-                    )}
-                </div>
+            <div className="stat-card-header">
                 <div
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${palette.bg} ring-4 ${palette.ring} transition-transform group-hover:scale-110`}
+                    className="stat-card-icon"
+                    style={{ backgroundColor: bgColor, color }}
                 >
-                    <Icon className={`h-6 w-6 ${palette.icon}`} />
+                    <Icon size={20} />
                 </div>
+                <button className="stat-card-info" aria-label={`Info about ${title}`}>
+                    <Info size={16} />
+                </button>
+            </div>
+            <div className="stat-card-body">
+                <p className="stat-card-title">{title}</p>
+                <div className="stat-card-value-row">
+                    <span className="stat-card-value">{value}</span>
+                    {unit && <span className="stat-card-unit">{unit}</span>}
+                </div>
+                <span
+                    className="stat-card-change"
+                    style={{ color: positive ? "#10b981" : "#f43f5e" }}
+                >
+                    {change}
+                </span>
             </div>
         </motion.div>
     );
 }
 
 
-// ─── Activity Badge ─────────────────────────────────────
-function ActivityBadge({ type }: { type: string }) {
-    const config: Record<string, { label: string; class: string }> = {
-        purchase_order: {
-            label: "Purchase",
-            class: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-        },
-        sales_order: {
-            label: "Sale",
-            class: "bg-sky-50 text-sky-700 ring-sky-200",
-        },
-        adjustment: {
-            label: "Adjustment",
-            class: "bg-amber-50 text-amber-700 ring-amber-200",
-        },
-        transfer: {
-            label: "Transfer",
-            class: "bg-purple-50 text-purple-700 ring-purple-200",
-        },
-        initial: {
-            label: "Initial",
-            class: "bg-gray-50 text-gray-700 ring-gray-200",
-        },
-    };
+// ─── Status Badge ───────────────────────────────────────
 
-    const c = config[type] || config.initial;
-
+function StatusBadge({ status, color }: { status: string; color: string }) {
     return (
         <span
-            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${c.class}`}
+            className="status-badge"
+            style={{
+                backgroundColor: `${color}18`,
+                color,
+                border: `1px solid ${color}30`,
+            }}
         >
-            {c.label}
+            {status}
         </span>
     );
-}
-
-
-// ─── Format helpers ─────────────────────────────────────
-function formatCurrency(amount: number) {
-    return new Intl.NumberFormat("en-IN", {
-        style: "currency",
-        currency: "INR",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(amount);
-}
-
-function timeAgo(dateStr: string) {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "Just now";
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    const days = Math.floor(hrs / 24);
-    return `${days}d ago`;
 }
 
 
@@ -173,200 +217,171 @@ function timeAgo(dateStr: string) {
 // ────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-    const user = useAuthStore((s) => s.user);
-    const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        async function fetchStats() {
-            try {
-                setLoading(true);
-                const res = await api.get("/api/dashboard/stats");
-                setStats(res.data.data);
-            } catch (err: any) {
-                setError(
-                    err?.response?.data?.message || "Failed to load dashboard data"
-                );
-            } finally {
-                setLoading(false);
-            }
-        }
-        fetchStats();
-    }, []);
-
-
-    // ── Loading state ──
-    if (loading) {
-        return (
-            <div className="flex h-full items-center justify-center p-8">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
-                    <p className="text-sm text-text-muted">Loading dashboard…</p>
-                </div>
-            </div>
-        );
-    }
-
-    // ── Error state ──
-    if (error) {
-        return (
-            <div className="flex h-full items-center justify-center p-8">
-                <div className="max-w-sm rounded-2xl border border-error/30 bg-error-light p-6 text-center">
-                    <AlertTriangle className="mx-auto mb-3 h-8 w-8 text-error" />
-                    <p className="text-sm font-medium text-red-800">{error}</p>
-                </div>
-            </div>
-        );
-    }
-
-    const data = stats!;
-
     return (
-        <div className="space-y-8 p-6 lg:p-8">
+        <div className="dashboard-container">
 
-            {/* ── Welcome Header ── */}
+            {/* ── Page Header ── */}
             <motion.div
-                initial={{ opacity: 0, y: -10 }}
+                initial={{ opacity: 0, y: -12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.4 }}
+                className="dashboard-header"
             >
-                <h1 className="text-2xl font-bold text-text-primary sm:text-3xl">
-                    Welcome back, {user?.name?.split(" ")[0] || "there"} 👋
-                </h1>
-                <p className="mt-1 text-sm text-text-muted">
-                    Here's what's happening with your inventory today.
-                </p>
+                <h1 className="dashboard-title">Inventory Overview</h1>
             </motion.div>
 
 
             {/* ── Stat Cards ── */}
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                <StatCard
-                    title="Total Products"
-                    value={data.totalProducts}
-                    subtitle="Active catalog items"
-                    icon={Package}
-                    color="indigo"
-                    delay={0}
-                />
-                <StatCard
-                    title="Total Shops"
-                    value={data.totalShops}
-                    subtitle="Locations managed"
-                    icon={Store}
-                    color="emerald"
-                    delay={0.1}
-                />
-                <StatCard
-                    title="Low Stock Alerts"
-                    value={data.lowStockCount}
-                    subtitle="Items below threshold"
-                    icon={AlertTriangle}
-                    color="amber"
-                    delay={0.2}
-                />
-                <StatCard
-                    title="Today's Sales"
-                    value={formatCurrency(data.todaySales.revenue)}
-                    subtitle={`${data.todaySales.orders} order${data.todaySales.orders !== 1 ? "s" : ""} today`}
-                    icon={DollarSign}
-                    color="sky"
-                    delay={0.3}
-                />
+            <div className="stats-grid">
+                {statsData.map((stat, idx) => (
+                    <StatCard key={stat.title} {...stat} delay={idx * 0.1} />
+                ))}
             </div>
 
 
-            {/* ── Recent Activity ── */}
+            {/* ── Sales Velocity Chart ── */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.4 }}
-                className="rounded-2xl border border-border bg-surface shadow-sm"
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="dashboard-card chart-card"
             >
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-border px-6 py-4">
-                    <div className="flex items-center gap-2.5">
-                        <Clock className="h-5 w-5 text-text-muted" />
-                        <h2 className="text-base font-semibold text-text-primary">
-                            Recent Activity
-                        </h2>
-                    </div>
-                    <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-600">
-                        Last 10
-                    </span>
+                <div className="card-header">
+                    <h2 className="card-title">Sales Velocity (Last 30 Days)</h2>
+                    <span className="card-badge">Last today</span>
                 </div>
 
-                {/* Activity list */}
-                {data.recentActivity.length === 0 ? (
-                    <div className="px-6 py-12 text-center">
-                        <TrendingUp className="mx-auto mb-3 h-8 w-8 text-text-muted" />
-                        <p className="text-sm text-text-muted">
-                            No activity yet. Start by adding products and managing stock!
-                        </p>
+                <div className="chart-wrapper">
+                    <ResponsiveContainer width="100%" height={320}>
+                        <LineChart data={chartData} margin={{ top: 20, right: 30, left: 10, bottom: 5 }}>
+                            <defs>
+                                <linearGradient id="ordersGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#6366f1" stopOpacity={0.3} />
+                                    <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
+                                </linearGradient>
+                                <linearGradient id="unitsGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.3} />
+                                    <stop offset="100%" stopColor="#38bdf8" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="var(--chart-grid)"
+                                vertical={false}
+                            />
+                            <XAxis
+                                dataKey="day"
+                                stroke="var(--chart-axis)"
+                                tick={{ fill: "var(--chart-axis)", fontSize: 12 }}
+                                tickLine={false}
+                                axisLine={{ stroke: "var(--chart-grid)" }}
+                                label={{ value: "Dates", position: "insideBottomRight", offset: -5, fill: "var(--chart-axis)", fontSize: 12 }}
+                            />
+                            <YAxis
+                                stroke="var(--chart-axis)"
+                                tick={{ fill: "var(--chart-axis)", fontSize: 12 }}
+                                tickLine={false}
+                                axisLine={false}
+                                label={{ value: "Units", angle: -90, position: "insideLeft", offset: 0, fill: "var(--chart-axis)", fontSize: 12 }}
+                            />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Legend
+                                verticalAlign="top"
+                                align="left"
+                                iconType="circle"
+                                iconSize={8}
+                                wrapperStyle={{ paddingBottom: 16, fontSize: 13, color: "var(--chart-axis)" }}
+                            />
+                            <Line
+                                type="monotone"
+                                dataKey="orders"
+                                name="Orders"
+                                stroke="#6366f1"
+                                strokeWidth={2.5}
+                                dot={false}
+                                activeDot={{ r: 6, strokeWidth: 2, fill: "#6366f1" }}
+                            />
+                            <Line
+                                type="monotone"
+                                dataKey="units"
+                                name="Units"
+                                stroke="#38bdf8"
+                                strokeWidth={2.5}
+                                dot={false}
+                                activeDot={{ r: 6, strokeWidth: 2, fill: "#38bdf8" }}
+                            />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* Peak Velocity Annotation */}
+                <div className="chart-annotation" style={{ right: "18%", top: "28%" }}>
+                    <div className="annotation-box">
+                        <span className="annotation-label">Peak Velocity</span>
+                        <span className="annotation-value">$2,450</span>
                     </div>
-                ) : (
-                    <ul className="divide-y divide-border">
-                        {data.recentActivity.map((item, idx) => (
-                            <motion.li
-                                key={item._id}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.25, delay: 0.45 + idx * 0.05 }}
-                                className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-surface-alt"
-                            >
-                                {/* Quantity indicator */}
-                                <div
-                                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                                        item.quantity_changed >= 0
-                                            ? "bg-emerald-50 text-emerald-600"
-                                            : "bg-red-50 text-red-600"
-                                    }`}
-                                >
-                                    {item.quantity_changed >= 0 ? (
-                                        <ArrowUpRight className="h-4 w-4" />
-                                    ) : (
-                                        <ArrowDownRight className="h-4 w-4" />
-                                    )}
-                                </div>
+                </div>
 
-                                {/* Description */}
-                                <div className="flex-1 min-w-0">
-                                    <p className="truncate text-sm font-medium text-text-primary">
-                                        {item.product_id?.name || "Unknown product"}
-                                        {item.product_id?.sku && (
-                                            <span className="ml-2 text-xs text-text-muted">
-                                                #{item.product_id.sku}
-                                            </span>
-                                        )}
-                                    </p>
-                                    <p className="truncate text-xs text-text-muted">
-                                        {item.shop_id?.name || "—"} • by {item.user_id?.name || "System"}
-                                        {item.reason && ` • ${item.reason}`}
-                                    </p>
-                                </div>
+                {/* Tontips Annotation */}
+                <div className="chart-annotation" style={{ left: "35%", top: "48%" }}>
+                    <div className="annotation-box">
+                        <span className="annotation-label">Tontips</span>
+                        <span className="annotation-value">$2,450</span>
+                    </div>
+                </div>
+            </motion.div>
 
-                                {/* Badge + qty + time */}
-                                <div className="flex shrink-0 items-center gap-3">
-                                    <ActivityBadge type={item.change_type} />
-                                    <span
-                                        className={`w-16 text-right text-sm font-semibold ${
-                                            item.quantity_changed >= 0
-                                                ? "text-emerald-600"
-                                                : "text-red-600"
-                                        }`}
-                                    >
-                                        {item.quantity_changed >= 0 ? "+" : ""}
-                                        {item.quantity_changed}
-                                    </span>
-                                    <span className="w-14 text-right text-xs text-text-muted">
-                                        {timeAgo(item.createdAt)}
-                                    </span>
-                                </div>
-                            </motion.li>
-                        ))}
-                    </ul>
-                )}
+
+            {/* ── Recent Stock Movements ── */}
+            <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+                className="dashboard-card"
+            >
+                <div className="card-header">
+                    <h2 className="card-title">Recent Stock Movements</h2>
+                </div>
+
+                <div className="table-wrapper">
+                    <table className="movements-table">
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>SKU</th>
+                                <th>Type</th>
+                                <th>Quantity</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {stockMovements.map((movement) => (
+                                <tr key={movement.id}>
+                                    <td className="item-name-cell">{movement.itemName}</td>
+                                    <td className="sku-cell">{movement.sku}</td>
+                                    <td>
+                                        <span className={`type-label ${movement.type === "Inbound" ? "type-inbound" : "type-outbound"}`}>
+                                            {movement.type}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span
+                                            className="quantity-cell"
+                                            style={{ color: movement.quantityNum >= 0 ? "#10b981" : "#f43f5e" }}
+                                        >
+                                            {movement.quantityNum >= 0 ? "+" : ""}{movement.quantityNum}
+                                        </span>
+                                    </td>
+                                    <td className="date-cell">{movement.date}</td>
+                                    <td>
+                                        <StatusBadge status={movement.status} color={movement.statusColor} />
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </motion.div>
         </div>
     );

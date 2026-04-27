@@ -1,18 +1,15 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
-  Store,
   Package,
   Warehouse,
   Truck,
   ShoppingCart,
-  Receipt,
-  Users,
+  BarChart3,
   Settings,
+  HelpCircle,
   Boxes,
-  ChevronLeft,
 } from "lucide-react";
-import { useState } from "react";
 import { cn } from "@/lib/cn";
 
 // ─── Sidebar Navigation ───
@@ -22,42 +19,68 @@ import { cn } from "@/lib/cn";
 /** Each link in the sidebar menu. */
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/shops", label: "Shops", icon: Store },
-  { to: "/products", label: "Products", icon: Package },
   { to: "/inventory", label: "Inventory", icon: Warehouse },
-  { to: "/suppliers", label: "Suppliers", icon: Truck },
-  { to: "/purchase-orders", label: "Purchase Orders", icon: ShoppingCart },
-  { to: "/sales-orders", label: "Sales Orders", icon: Receipt },
-  { to: "/users", label: "Users", icon: Users },
+  { to: "/sales-orders", label: "Orders", icon: ShoppingCart },
+  { to: "/suppliers", label: "Shipments", icon: Truck },
+  { to: "/products", label: "Analytics", icon: BarChart3 },
   { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/users", label: "Support", icon: HelpCircle },
 ];
 
 export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
 
   return (
     <aside
-      className={cn(
-        "flex h-screen flex-col border-r border-border bg-surface transition-all duration-300",
-        collapsed ? "w-[72px]" : "w-64"
-      )}
+      className="sidebar-dark"
+      style={{
+        width: 240,
+        display: "flex",
+        flexDirection: "column",
+        borderRight: "1px solid #1e2d4a",
+        background: "#0b1120",
+        height: "100vh",
+        flexShrink: 0,
+      }}
     >
       {/* ── Logo ── */}
-      <div className="flex items-center gap-3 border-b border-border px-4 py-5">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-600">
-          <Boxes className="h-5 w-5 text-white" />
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          padding: "24px 24px 20px",
+        }}
+      >
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: "linear-gradient(135deg, #6366f1, #818cf8)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <Boxes size={20} color="#ffffff" />
         </div>
-        {!collapsed && (
-          <span className="text-lg font-bold tracking-tight text-text-primary">
-            InventoHub
-          </span>
-        )}
+        <span
+          style={{
+            fontSize: "1.125rem",
+            fontWeight: 700,
+            color: "#e8edf5",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          InventoHub
+        </span>
       </div>
 
       {/* ── Navigation Links ── */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <ul className="space-y-1">
+      <nav style={{ flex: 1, overflowY: "auto", padding: "8px 12px" }}>
+        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 4 }}>
           {navItems.map(({ to, label, icon: Icon }) => {
             const isActive =
               location.pathname === to ||
@@ -67,37 +90,50 @@ export default function Sidebar() {
               <li key={to}>
                 <NavLink
                   to={to}
-                  className={cn(
-                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                    isActive
-                      ? "bg-primary-50 text-primary-700 shadow-sm"
-                      : "text-text-secondary hover:bg-primary-50/50 hover:text-primary-600"
-                  )}
+                  className={cn("sidebar-nav-link")}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "10px 16px",
+                    borderRadius: 12,
+                    fontSize: "0.875rem",
+                    fontWeight: isActive ? 600 : 500,
+                    textDecoration: "none",
+                    transition: "all 0.2s ease",
+                    color: isActive ? "#e8edf5" : "#5a6a8a",
+                    background: isActive
+                      ? "linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.08))"
+                      : "transparent",
+                    borderLeft: isActive ? "3px solid #6366f1" : "3px solid transparent",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = "rgba(99, 102, 241, 0.08)";
+                      e.currentTarget.style.color = "#8896b3";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "#5a6a8a";
+                    }
+                  }}
                 >
-                  <Icon className={cn("h-5 w-5 shrink-0", isActive && "text-primary-600")} />
-                  {!collapsed && <span>{label}</span>}
+                  <Icon
+                    size={20}
+                    style={{
+                      flexShrink: 0,
+                      color: isActive ? "#818cf8" : "inherit",
+                    }}
+                  />
+                  <span>{label}</span>
                 </NavLink>
               </li>
             );
           })}
         </ul>
       </nav>
-
-      {/* ── Collapse Toggle ── */}
-      <div className="border-t border-border px-3 py-3">
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="flex w-full items-center justify-center rounded-xl p-2 text-text-muted transition-colors hover:bg-primary-50 hover:text-primary-600"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <ChevronLeft
-            className={cn(
-              "h-5 w-5 transition-transform duration-300",
-              collapsed && "rotate-180"
-            )}
-          />
-        </button>
-      </div>
     </aside>
   );
 }

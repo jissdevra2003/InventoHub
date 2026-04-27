@@ -42,12 +42,13 @@ export const getDashboardStats = asyncHandler(async (req: Request, res: Response
         Shop.countDocuments({ market_id: marketId }),
 
         // 3. Low stock count: items where quantity <= min_stock
+        //“Show me products where minimum stock is set AND current stock is below that limit”
         Inventory.countDocuments({
             market_id: marketId,
             $expr: {
                 $and: [
-                    { $gt: ["$min_stock", 0] },              // min_stock is set
-                    { $lte: ["$quantity", "$min_stock"] },    // quantity at or below threshold
+                    { $gt: ["$min_stock", 0] },              // min_stock is set   ,  min_stock>0
+                    { $lte: ["$quantity", "$min_stock"] },    // quantity at or below threshold  ,  qunatity<=min_stock
                 ],
             },
         }),
