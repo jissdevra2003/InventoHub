@@ -179,12 +179,13 @@ export default function Register() {
         handleSubmit(submitRegistration)();
     }
 
-    // The actual registration API calls (two-step flow)
+    // Single atomic registration call — creates Market + User together in one transaction.
+    // If anything fails, nothing is saved (no orphaned companies).
     async function submitRegistration(data: RegisterFormData) {
         try {
             setSubmitStatus(null);
 
-            // Strip confirmPassword — the server doesn't need it
+            // Strip confirmPassword — the server only needs the final password
             const { confirmPassword: _, ...ownerData } = data.owner;
 
             // Remove empty optional market fields (e.g. "" → don't send them)
@@ -192,12 +193,8 @@ export default function Register() {
                 Object.entries(data.market).filter(([, v]) => v !== "")
             );
 
-            // API Call 1 → Register company, get a temporary token back
-            const companyRes = await api.post("/api/auth/register/company", marketData);
-            const tempToken = companyRes.data.data.tempToken;
-
-            // API Call 2 → Register user with that temp token
-            await api.post("/api/auth/register/user", { ...ownerData, tempToken });
+            // Single API call — backend creates Market + User atomically in one transaction
+            await api.post("/api/users/register", { owner: ownerData, market: marketData });
 
             setSubmitStatus({
                 type: "success",

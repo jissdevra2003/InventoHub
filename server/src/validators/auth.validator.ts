@@ -48,16 +48,11 @@ export const userRegisterValidator = z.object({
   password: z.string()
     .regex(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/, "Password must be 8+ characters with at least one letter and one number"),
 
-  confirmPassword: z.string(),
-
   phone: z.string()
     .regex(/^(?:\+91)?[6-9]\d{9}$/, "Invalid phone number")
     .optional(),
 
-}).refine(
-  (data) => data.password === data.confirmPassword,
-  { message: "Passwords do not match", path: ["confirmPassword"] }
-);
+});
 
 
 // ============================================
