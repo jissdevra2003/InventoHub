@@ -15,14 +15,14 @@ import Topbar from "./Topbar";
 
 export default function AppLayout() {
   return (
-    <div className="flex h-screen bg-surface-alt">
+    <div className="flex h-screen" style={{ background: "#0b1120" }}>
       {/* Left — Sidebar navigation */}
       <Sidebar />
 
       {/* Right — Topbar + page content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar />
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto" style={{ background: "#0f1729" }}>
           <Outlet />
         </main>
       </div>

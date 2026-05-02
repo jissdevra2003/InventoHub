@@ -1,0 +1,441 @@
+/* ═══════════════════════════════════════════════════════════
+   Dashboard Styles — Obsidian & Sapphire Dark Theme
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── CSS Variables ── */
+:root {
+    --dash-bg: #0f1729;
+    --dash-surface: #162036;
+    --dash-surface-hover: #1c2a45;
+    --dash-border: #1e2d4a;
+    --dash-text: #e8edf5;
+    --dash-text-secondary: #8896b3;
+    --dash-text-muted: #5a6a8a;
+    --chart-grid: #1e2d4a;
+    --chart-axis: #5a6a8a;
+    --dash-accent: #6366f1;
+    --dash-glow: rgba(99, 102, 241, 0.15);
+}
+
+
+/* ── Container ── */
+.dashboard-container {
+    padding: 24px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 1400px;
+    min-height: 100%;
+}
+
+
+/* ── Header ── */
+.dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dashboard-title {
+    font-size: 1.625rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    letter-spacing: -0.02em;
+}
+
+
+/* ── Stats Grid ── */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+@media (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* ── Stat Card ── */
+.dashboard-stat-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.3), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.dashboard-stat-card:hover {
+    border-color: rgba(99, 102, 241, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(99, 102, 241, 0.1);
+}
+
+.dashboard-stat-card:hover::before {
+    opacity: 1;
+}
+
+.stat-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.stat-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+}
+
+.dashboard-stat-card:hover .stat-card-icon {
+    transform: scale(1.1);
+}
+
+.stat-card-info {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--dash-text-muted);
+    padding: 4px;
+    border-radius: 8px;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-card-info:hover {
+    color: var(--dash-text-secondary);
+}
+
+.stat-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-card-title {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--dash-text-secondary);
+    margin: 0;
+}
+
+.stat-card-value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.stat-card-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.stat-card-unit {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--dash-text-muted);
+}
+
+.stat-card-change {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+
+/* ── Dashboard Cards ── */
+.dashboard-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    margin: 0;
+}
+
+.card-badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--dash-text-secondary);
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+
+/* ── Chart Card ── */
+.chart-card {
+    position: relative;
+}
+
+.chart-wrapper {
+    padding: 16px 16px 8px 8px;
+}
+
+/* Recharts overrides for dark theme */
+.chart-card .recharts-cartesian-grid-horizontal line,
+.chart-card .recharts-cartesian-grid-vertical line {
+    stroke: var(--chart-grid);
+}
+
+.chart-card .recharts-legend-item-text {
+    color: var(--dash-text-secondary) !important;
+}
+
+.chart-card .recharts-default-legend {
+    padding-left: 24px !important;
+}
+
+
+/* ── Chart Tooltip ── */
+.chart-tooltip {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+}
+
+.chart-tooltip-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    margin: 0 0 6px 0;
+}
+
+.chart-tooltip-value {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    margin: 2px 0;
+}
+
+
+/* ── Chart Annotations ── */
+.chart-annotation {
+    position: absolute;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.annotation-box {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.annotation-label {
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: var(--dash-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.annotation-value {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--dash-text);
+}
+
+
+/* ── Table ── */
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.movements-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.movements-table thead th {
+    text-align: left;
+    padding: 14px 24px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--dash-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--dash-border);
+    white-space: nowrap;
+}
+
+.movements-table tbody tr {
+    transition: background 0.2s ease;
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.movements-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.movements-table tbody tr:hover {
+    background: var(--dash-surface-hover);
+}
+
+.movements-table tbody td {
+    padding: 16px 24px;
+    white-space: nowrap;
+    color: var(--dash-text-secondary);
+}
+
+.item-name-cell {
+    font-weight: 600;
+    color: var(--dash-text) !important;
+}
+
+.sku-cell {
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.8125rem;
+}
+
+.quantity-cell {
+    font-weight: 600;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+}
+
+.date-cell {
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted) !important;
+}
+
+
+/* ── Type Labels ── */
+.type-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.type-inbound {
+    color: #10b981;
+}
+
+.type-outbound {
+    color: #f43f5e;
+}
+
+
+/* ── Status Badge ── */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 14px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 16px;
+        gap: 16px;
+    }
+
+    .dashboard-title {
+        font-size: 1.375rem;
+    }
+
+    .stat-card-value {
+        font-size: 1.5rem;
+    }
+
+    .card-header {
+        padding: 16px 20px;
+    }
+
+    .movements-table thead th,
+    .movements-table tbody td {
+        padding: 12px 16px;
+    }
+}
+
+
+/* ── Subtle background glow effect ── */
+.dashboard-container::before {
+    content: "";
+    position: fixed;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.dashboard-container::after {
+    content: "";
+    position: fixed;
+    bottom: -200px;
+    left: -100px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.dashboard-container > * {
+    position: relative;
+    z-index: 1;
+}

@@ -18,7 +18,7 @@ export const listInventoryByShop = asyncHandler(
 
     const { shopId } = req.params;
 
-    // 1. Check shop exists in same market
+    // 1. Find the active shop that belongs to the user's market using the given shop ID
     const shop = await Shop.findOne({
       _id: shopId,
       market_id: user.marketId,
@@ -38,7 +38,7 @@ export const listInventoryByShop = asyncHandler(
       throw new ApiError(403, "Access denied for this shop");
     }
 
-    // 3. Get inventory for this shop
+    // 3. Fetch all inventory items for this specific shop and market, and include full details of the linked products
     const inventory = await Inventory.find({
       shop_id: shopId,
       market_id: user.marketId,
@@ -98,7 +98,7 @@ export const increaseInventory = asyncHandler(
       throw new ApiError(403, "Access denied. You are not assigned to this shop.");
     }
 
-    // 1. Find or create inventory record
+    // 1. Look for an existing inventory record for this specific product in the given shop and market
     let inventory = await Inventory.findOne({
       shop_id: shopId,
       product_id: productId,
@@ -116,11 +116,11 @@ export const increaseInventory = asyncHandler(
       });
     }
 
-    // 2. Update quantity
+    // 2. Increase the stock count and save the new total to the database
     inventory.quantity += quantity;
-    await inventory.save();
+    await inventory.save(); // Updates the existing product record in the database
 
-    // 3. Record in StockLedger
+    // 3. Create a history log entry showing how much stock was added so we can track the transaction
     await StockLedger.create({
       market_id: user.marketId,
       shop_id: shopId,
@@ -160,7 +160,7 @@ export const decreaseInventory = asyncHandler(
       throw new ApiError(403, "Access denied. You are not assigned to this shop.");
     }
 
-    // 1. Find inventory record
+    // 1. Find the current inventory details for this product in the given shop
     const inventory = await Inventory.findOne({
       shop_id: shopId,
       product_id: productId,
@@ -173,11 +173,11 @@ export const decreaseInventory = asyncHandler(
 
     const previousStock = inventory.quantity;
 
-    // 2. Update quantity
+    // 2. Decrease the stock count and save the updated amount to the database
     inventory.quantity -= quantity;
-    await inventory.save();
+    await inventory.save(); // Removes the stock from our database record
 
-    // 3. Record in StockLedger
+    // 3. Create a history log entry showing how much stock was removed to keep a paper trail
     await StockLedger.create({
       market_id: user.marketId,
       shop_id: shopId,
@@ -217,6 +217,8 @@ export const listLowStockInventory = asyncHandler(
       filter.shop_id = { $in: user.assignedShopsId };
     }
 
+    // Search the database for all inventory items that match our low-stock filters,
+    // and pull in the full details of the related products and their shops at the same time
     const lowStockItems = await Inventory.find(filter).populate("product_id shop_id");
 
     const items = lowStockItems.map((inv) => ({

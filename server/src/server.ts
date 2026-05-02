@@ -29,7 +29,7 @@ const PORT: number = Number(process.env.PORT) || 3000;
 
 // ---------- MIDDLEWARE ----------
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+  origin: process.env.CORS_ORIGIN || "https://invento-hub-mfhu.vercel.app",
   credentials: true,
 }));
 app.use(express.json());
