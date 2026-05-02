@@ -390,3 +390,117 @@ return res.status(200).json(
 new ApiResponse(200, "Sales summary fetched successfully", summary)
 );
 });
+
+
+// ─── 6. Return Sale Items (Partial or Full) ───────────────────────────────────
+// Processes a customer return against a COMPLETED sales order.
+// Accepts an array of { product_id, quantity } items to return.
+// Restores inventory and writes a "sales_return" ledger entry per item.
+// NOTE: for a FULL cancellation use the cancelSalesOrder endpoint instead.
+export const returnSaleItems = asyncHandler(async (req: Request, res: Response) => {
+    const user = req.user;
+    if (!user) throw new ApiError(401, "Unauthorized");
+
+    const { id } = req.params;
+    const { items } = req.body as { items: { product_id: string; quantity: number }[] };
+
+    if (!Array.isArray(items) || items.length === 0) {
+        throw new ApiError(400, "items array is required and cannot be empty");
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const salesOrder = await SalesOrder.findOne({
+            _id: id,
+            market_id: user.marketId,
+        }).session(session);
+
+        if (!salesOrder) throw new ApiError(404, "Sales Order not found");
+
+        // Shop access check
+        const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+        if (!ownerAccess && user.builtInRole !== "admin" && !user.assignedShopsId.includes(salesOrder.shop_id.toString())) {
+            throw new ApiError(403, "Access denied. You are not assigned to this shop.");
+        }
+
+        // Can only return from a completed SO
+        if (salesOrder.status !== "completed") {
+            throw new ApiError(400, `Cannot return items. SO status is '${salesOrder.status}'. Only completed sales orders support returns.`);
+        }
+
+        for (const returnItem of items) {
+            if (!returnItem.product_id || typeof returnItem.quantity !== "number" || returnItem.quantity < 1) {
+                throw new ApiError(400, "Each return item must have a valid product_id and a positive quantity");
+            }
+
+            // Validate the product is on this SO
+            const soItem = salesOrder.items.find(
+                (i) => i.product_id.toString() === returnItem.product_id.toString()
+            );
+            if (!soItem) {
+                throw new ApiError(400, `Product ${returnItem.product_id} is not part of this Sales Order`);
+            }
+            if (returnItem.quantity > soItem.quantity) {
+                throw new ApiError(
+                    400,
+                    `Cannot return ${returnItem.quantity} units of product ${returnItem.product_id}. Original sold quantity was ${soItem.quantity}.`
+                );
+            }
+
+            // Find or create inventory record and restore stock
+            let inventory = await Inventory.findOne({
+                market_id: salesOrder.market_id,
+                shop_id: salesOrder.shop_id,
+                product_id: returnItem.product_id,
+            }).session(session);
+
+            const previousStock = inventory ? inventory.quantity : 0;
+
+            if (!inventory) {
+                // Edge case: inventory record was deleted — recreate it
+                inventory = new Inventory({
+                    market_id: salesOrder.market_id,
+                    shop_id: salesOrder.shop_id,
+                    product_id: returnItem.product_id,
+                    quantity: returnItem.quantity,
+                });
+            } else {
+                inventory.quantity += returnItem.quantity;
+            }
+            await inventory.save({ session });
+
+            // Write ledger entry
+            await StockLedger.create([{
+                market_id: salesOrder.market_id,
+                shop_id: salesOrder.shop_id,
+                product_id: returnItem.product_id,
+                quantity_changed: returnItem.quantity,     // positive = stock coming back
+                change_type: "sales_return",
+                previous_stock: previousStock,
+                new_stock: inventory.quantity,
+                reason: `Sales return from SO ${salesOrder.sale_number}`,
+                user_id: user.userId,
+                reference_id: salesOrder._id,
+            }], { session });
+        }
+
+        await session.commitTransaction();
+
+        return res.status(200).json(
+            new ApiResponse(200, "Sales return processed. Inventory restored.", {
+                sales_order_id: salesOrder._id,
+                sale_number: salesOrder.sale_number,
+                returned_items: items,
+            })
+        );
+
+    } catch (error) {
+        await session.abortTransaction();
+        throw error instanceof ApiError ? error : new ApiError(500, "Failed to process sales return");
+    } finally {
+        session.endSession();
+    }
+});
+

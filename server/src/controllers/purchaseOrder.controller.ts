@@ -293,3 +293,111 @@ export const cancelPurchaseOrder = asyncHandler(async (req: Request, res: Respon
         new ApiResponse(200, "Purchase Order cancelled successfully", purchaseOrder)
     );
 });
+
+
+// ─── 6. Return Purchase Items ─────────────────────────────────────────────────
+// Returns one or more items (partially or fully) back to the supplier.
+// Only works on POs with status "received".
+// Deducts inventory and writes a "purchase_return" ledger entry per item.
+export const returnPurchaseItems = asyncHandler(async (req: Request, res: Response) => {
+    const user = req.user;
+    if (!user) throw new ApiError(401, "Unauthorized");
+
+    const { id } = req.params;
+    const { items } = req.body as { items: { product_id: string; quantity: number }[] };
+
+    if (!Array.isArray(items) || items.length === 0) {
+        throw new ApiError(400, "items array is required and cannot be empty");
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const purchaseOrder = await PurchaseOrder.findOne({
+            _id: id,
+            market_id: user.marketId,
+        }).session(session);
+
+        if (!purchaseOrder) throw new ApiError(404, "Purchase Order not found");
+
+        // Shop access check
+        const ownerAccess = user.isSuperAdmin && user.permissions?.includes("*");
+        if (!ownerAccess && user.builtInRole !== "admin" && !user.assignedShopsId.includes(purchaseOrder.shop_id.toString())) {
+            throw new ApiError(403, "Access denied. You are not assigned to this shop.");
+        }
+
+        // Can only return from a received PO
+        if (purchaseOrder.status !== "received") {
+            throw new ApiError(400, `Cannot return items. PO status is '${purchaseOrder.status}'. Only received POs support returns.`);
+        }
+
+        for (const returnItem of items) {
+            if (!returnItem.product_id || typeof returnItem.quantity !== "number" || returnItem.quantity < 1) {
+                throw new ApiError(400, "Each return item must have a valid product_id and a positive quantity");
+            }
+
+            // Validate the product is actually on this PO
+            const poItem = purchaseOrder.items.find(
+                (i) => i.product_id.toString() === returnItem.product_id.toString()
+            );
+            if (!poItem) {
+                throw new ApiError(400, `Product ${returnItem.product_id} is not part of this Purchase Order`);
+            }
+            if (returnItem.quantity > poItem.quantity) {
+                throw new ApiError(
+                    400,
+                    `Cannot return ${returnItem.quantity} units of product ${returnItem.product_id}. Original PO quantity was ${poItem.quantity}.`
+                );
+            }
+
+            // Deduct from inventory
+            const inventory = await Inventory.findOne({
+                market_id: purchaseOrder.market_id,
+                shop_id: purchaseOrder.shop_id,
+                product_id: returnItem.product_id,
+            }).session(session);
+
+            if (!inventory || inventory.quantity < returnItem.quantity) {
+                throw new ApiError(
+                    400,
+                    `Insufficient stock to return ${returnItem.quantity} units. Current stock: ${inventory?.quantity ?? 0}`
+                );
+            }
+
+            const previousStock = inventory.quantity;
+            inventory.quantity -= returnItem.quantity;
+            await inventory.save({ session });
+
+            // Write ledger entry
+            await StockLedger.create([{
+                market_id: purchaseOrder.market_id,
+                shop_id: purchaseOrder.shop_id,
+                product_id: returnItem.product_id,
+                quantity_changed: -returnItem.quantity,
+                change_type: "purchase_return",
+                previous_stock: previousStock,
+                new_stock: inventory.quantity,
+                reason: `Purchase return from PO ${purchaseOrder.purchase_number}`,
+                user_id: user.userId,
+                reference_id: purchaseOrder._id,
+            }], { session });
+        }
+
+        await session.commitTransaction();
+
+        return res.status(200).json(
+            new ApiResponse(200, "Purchase return processed. Inventory updated.", {
+                purchase_order_id: purchaseOrder._id,
+                purchase_number: purchaseOrder.purchase_number,
+                returned_items: items,
+            })
+        );
+
+    } catch (error) {
+        await session.abortTransaction();
+        throw error instanceof ApiError ? error : new ApiError(500, "Failed to process purchase return");
+    } finally {
+        session.endSession();
+    }
+});

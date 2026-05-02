@@ -12,3 +12,5 @@ import "./Supplier.model";
 import "./PurchaseOrder.model";
 import "./SalesOrder.model";
 import "./Invite.model";
+import "./Transfer.model";
+

@@ -8,6 +8,7 @@ import {
     getPurchaseOrderById,
     receivePurchaseOrder,
     cancelPurchaseOrder,
+    returnPurchaseItems,
 } from "../controllers/purchaseOrder.controller";
 
 const purchaseOrderRouter = express.Router();
@@ -27,8 +28,12 @@ purchaseOrderRouter.get("/:id", rbac([PERMISSIONS.PURCHASE_ORDER.READ]), getPurc
 // PATCH /api/purchase-orders/:id/receive — Mark received -> updates inventory and supplier
 purchaseOrderRouter.patch("/:id/receive", rbac([PERMISSIONS.PURCHASE_ORDER.RECEIVE]), receivePurchaseOrder);
 
-// PATCH /api/purchase-orders/:id/cancel — Cancel a draft PO
+// PATCH /api/purchase-orders/:id/cancel — Cancel a draft PO (received POs cannot be cancelled)
 purchaseOrderRouter.patch("/:id/cancel", rbac([PERMISSIONS.PURCHASE_ORDER.DELETE]), cancelPurchaseOrder);
+
+// POST /api/purchase-orders/:id/return — Return items from a received PO back to supplier
+purchaseOrderRouter.post("/:id/return", rbac([PERMISSIONS.PURCHASE_ORDER.RETURN]), returnPurchaseItems);
 
 
 export default purchaseOrderRouter;
+

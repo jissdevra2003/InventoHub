@@ -5,6 +5,7 @@ import { SHOP } from './componentBasedPerm/shop.perm';
 import { SUPPLIER } from './componentBasedPerm/supplier.perm';
 import { PURCHASE_ORDER } from './componentBasedPerm/purchaseOrder.perm';
 import { SALES_ORDER } from './componentBasedPerm/salesOrder.perm';
+import { TRANSFER } from './componentBasedPerm/transfer.perm';
 
 
 // use like this: PERMISSIONS.USER.INVITE
@@ -15,7 +16,8 @@ export const PERMISSIONS = {
     SHOP,
     SUPPLIER,
     PURCHASE_ORDER,
-    SALES_ORDER
+    SALES_ORDER,
+    TRANSFER,
 };
 
 
@@ -27,7 +29,8 @@ export const ALL_PERMISSIONS = [
     ...Object.values(SHOP),
     ...Object.values(SUPPLIER),
     ...Object.values(PURCHASE_ORDER),
-    ...Object.values(SALES_ORDER)
+    ...Object.values(SALES_ORDER),
+    ...Object.values(TRANSFER),
 ];
 
 //Only superadmin permissions . Means no one can have these permissions except superadmin
