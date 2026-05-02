@@ -21,7 +21,7 @@ const useAuthStore = create<AuthState>((set) => ({
   isLoading: true, // starts true — we check the session before rendering
 
   // ── Log in ──
-  login: async (email, password) => {
+  login: async (email, password)=>{
     const res = await api.post("/api/users/login", { email, password });
     set({ user: res.data.data.user });
   },
