@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   //Package,
@@ -9,8 +9,11 @@ import {
   Settings,
   HelpCircle,
   Boxes,
+  LogOut,
+  User as UserIcon,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import useAuthStore from "@/stores/authStore";
 
 // ─── Sidebar Navigation ───
 // WHY a separate component? Every protected page needs this sidebar.
@@ -29,6 +32,18 @@ const navItems = [
 
 export default function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch {
+      // Even if the API call fails, redirect to login
+      navigate("/login");
+    }
+  };
 
   return (
     <aside
@@ -134,6 +149,101 @@ export default function Sidebar() {
           })}
         </ul>
       </nav>
+
+      {/* ── User Profile & Logout ── */}
+      <div
+        style={{
+          padding: "16px",
+          borderTop: "1px solid #1e2d4a",
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+        }}
+      >
+        {/* User info */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "8px",
+          }}
+        >
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #6366f1, #818cf8)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <UserIcon size={16} color="#ffffff" />
+          </div>
+          <div style={{ overflow: "hidden", flex: 1 }}>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                color: "#e8edf5",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {user?.name || "User"}
+            </p>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "0.75rem",
+                color: "#5a6a8a",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {user?.email || ""}
+            </p>
+          </div>
+        </div>
+
+        {/* Logout button */}
+        <button
+          onClick={handleLogout}
+          id="logout-button"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "10px 16px",
+            borderRadius: 12,
+            border: "1px solid #1e2d4a",
+            background: "transparent",
+            color: "#f43f5e",
+            fontSize: "0.875rem",
+            fontWeight: 500,
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            width: "100%",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(244, 63, 94, 0.1)";
+            e.currentTarget.style.borderColor = "rgba(244, 63, 94, 0.3)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.borderColor = "#1e2d4a";
+          }}
+        >
+          <LogOut size={18} />
+          <span>Log Out</span>
+        </button>
+      </div>
     </aside>
   );
 }

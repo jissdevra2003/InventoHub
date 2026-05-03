@@ -317,7 +317,7 @@ export default function Dashboard() {
                 {/* Peak Velocity Annotation */}
                 <div className="chart-annotation" style={{ right: "18%", top: "28%" }}>
                     <div className="annotation-box">
-                        <span className="annotation-label">Peak43 Velocity</span>
+                        <span className="annotation-label">Peak Velocity</span>
                         <span className="annotation-value">$2,450</span>
                     </div>
                 </div>

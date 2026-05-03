@@ -1,10 +1,13 @@
 import { Bell, User as UserIcon } from "lucide-react";
+import useAuthStore from "@/stores/authStore";
 
 // ─── Top Bar ───
 // WHY? Displays the logged-in user's name/role and provides quick actions
 // like logout and notifications. Stays consistent across all pages.
 
 export default function Topbar() {
+  const { user } = useAuthStore();
+
   return (
     <header
       style={{
@@ -39,27 +42,45 @@ export default function Topbar() {
         <Bell size={20} />
       </button>
 
-      {/* User avatar */}
-      <button
+      {/* User avatar + name */}
+      <div
         style={{
-          width: 36,
-          height: 36,
-          borderRadius: "50%",
-          background: "linear-gradient(135deg, #6366f1, #818cf8)",
-          border: "2px solid #1e2d4a",
-          cursor: "pointer",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
-          padding: 0,
-          transition: "border-color 0.2s ease",
+          gap: 10,
         }}
-        aria-label="User profile"
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#6366f1"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#1e2d4a"; }}
       >
-        <UserIcon size={16} color="#ffffff" />
-      </button>
+        <button
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, #6366f1, #818cf8)",
+            border: "2px solid #1e2d4a",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+            transition: "border-color 0.2s ease",
+          }}
+          aria-label="User profile"
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#6366f1"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#1e2d4a"; }}
+        >
+          <UserIcon size={16} color="#ffffff" />
+        </button>
+        <span
+          style={{
+            fontSize: "0.875rem",
+            fontWeight: 500,
+            color: "#e8edf5",
+          }}
+        >
+          {user?.name || "User"}
+        </span>
+      </div>
     </header>
   );
 }
+
