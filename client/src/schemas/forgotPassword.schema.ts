@@ -15,19 +15,25 @@ export const otpStepSchema = z.object({
 });
 export type OtpStepData = z.infer<typeof otpStepSchema>;
 
-/** Step 3: Set new password */
-export const newPasswordSchema = z
-    .object({
-        newPassword: z
-            .string()
-            .regex(
-                /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/,
-                "Password must be 8+ characters with at least one letter and one number"
-            ),
-        confirmPassword: z.string(),
-    })
-    .refine((data) => data.newPassword === data.confirmPassword, {
+/** Step 3: Set new password – base object */
+const newPasswordBaseSchema = z.object({
+    newPassword: z
+        .string()
+        .regex(
+            /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/,
+            "Password must be 8+ characters with at least one letter and one number"
+        ),
+    confirmPassword: z.string(),
+});
+
+/** Step 3: Set new password – with cross-field refinement */
+export const newPasswordSchema = newPasswordBaseSchema.refine(
+    (data) => data.newPassword === data.confirmPassword,
+    {
         message: "Passwords do not match",
         path: ["confirmPassword"],
-    });
-export type NewPasswordData = z.infer<typeof newPasswordSchema>;
+    }
+);
+
+/** Form type inferred from the base object (avoids ZodEffects mismatch with useForm) */
+export type NewPasswordData = z.infer<typeof newPasswordBaseSchema>;

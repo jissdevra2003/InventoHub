@@ -21,7 +21,7 @@ import {
     otpStepSchema,
     newPasswordSchema,
     type EmailStepData,
-    type OtpStepData,
+    //type OtpStepData,
     type NewPasswordData,
 } from "../schemas/forgotPassword.schema";
 
