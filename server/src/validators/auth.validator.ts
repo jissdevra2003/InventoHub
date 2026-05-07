@@ -67,7 +67,8 @@ export const forgotPasswordValidator = z.object({
 // Reset Password Validator
 // ============================================
 export const resetPasswordValidator = z.object({
-  token: z.string().min(1, "Reset token is required"),
+  email: z.email("Invalid email format"),
+  otp: z.string().regex(/^\d{6}$/, "OTP must be exactly 6 digits"),
   newPassword: z.string()
     .regex(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/, "Password must be 8+ characters with at least one letter and one number"),
   confirmPassword: z.string(),
