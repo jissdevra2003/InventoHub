@@ -21,6 +21,7 @@ import dashboardRouter from './routes/dashboard.route';
 import marketRouter from './routes/market.route';
 import transferRouter from './routes/transfer.route';
 import stockLedgerRouter from './routes/stockLedger.route';
+import inviteRouter from './routes/invite.route';
 
 dotenv.config();
 
@@ -80,6 +81,7 @@ app.use('/api/dashboard', dashboardRouter);       //dashboard routes
 app.use('/api/market', marketRouter);             //market routes
 app.use('/api/transfers', transferRouter);        //stock transfer routes
 app.use('/api/stock-ledger', stockLedgerRouter);  //stock ledger analytics routes
+app.use('/api/invites', inviteRouter);             //invite management routes
 
 
 // ---------- HEALTH CHECK ----------

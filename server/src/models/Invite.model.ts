@@ -11,6 +11,7 @@ export interface IInvite extends Document {
     invited_by:Types.ObjectId
     role:string
     permissions:string[]
+    assignedShops_id?: Types.ObjectId[]
     invite_token:string
     status:InviteStatus
      expires_at: Date
@@ -49,6 +50,11 @@ const inviteSchema=new Schema<IInvite>(
             type:[String],  //string array
             required:true
         },
+        assignedShops_id:[{
+            type:Schema.Types.ObjectId,
+            ref:"Shop",
+            default:null
+        }],
         invite_token:{
             type:String,
             required:true,

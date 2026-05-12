@@ -13,6 +13,7 @@ import crypto from 'crypto'
 import { Invite } from '../models/Invite.model';
 import { Shop } from '../models/Shop.model';
 import { canUpdateUser } from '../utils/userAccess';
+import { sendEmail } from '../utils/sendEmail';
 
 
 
@@ -320,7 +321,7 @@ export const GetUserProfile = asyncHandler(async (req: Request, res: Response) =
 
 export const InviteUser = asyncHandler(async (req: Request, res: Response) => {
 
-  const { email, role, permissions } = req.body;
+  const { email, role, permissions, assignedShops_id } = req.body;
   const inviter = req.user;   //authMiddleware added "req.user"
 
   if (!inviter) throw new ApiError(401, "Unauthorized");
@@ -335,6 +336,19 @@ export const InviteUser = asyncHandler(async (req: Request, res: Response) => {
     permissions,
     inviter.isSuperAdmin
   );
+
+  // Validate assigned shops belong to the same market
+  if (assignedShops_id && Array.isArray(assignedShops_id) && assignedShops_id.length > 0) {
+    const shops = await Shop.find({
+      _id: { $in: assignedShops_id },
+      market_id: inviter.marketId,
+      isActive: true,
+    });
+
+    if (shops.length !== assignedShops_id.length) {
+      throw new ApiError(404, "One or more shops not found or not in your market");
+    }
+  }
 
   const userExists = await User.findOne({
     email,
@@ -352,28 +366,63 @@ export const InviteUser = asyncHandler(async (req: Request, res: Response) => {
 
   if (inviteExists) throw new ApiError(400, "Invite already sent")
 
-  //for testing
-  //const invite_token = "55550002"
   const invite_token = crypto.randomBytes(32).toString("hex");
 
   await Invite.create({
     email,
     role,
     permissions,
+    assignedShops_id: assignedShops_id || [],
     market_id: inviter.marketId,
     invited_by: inviter.userId,
     invite_token,
     status: "invited",
     expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000),
-
-
   })
 
   const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${invite_token}`;
 
-  // sendEmail(inviteLink)
+  // Send invite email
+  try {
+    await sendEmail({
+      to: email,
+      subject: "InventoHub — You've been invited to join a team!",
+      html: `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px; background: #f8fafc; border-radius: 12px;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #818cf8); margin-bottom: 12px;">
+              <span style="font-size: 20px; color: #fff; font-weight: 700;">IH</span>
+            </div>
+            <h2 style="color: #1e293b; margin: 0 0 4px 0; font-size: 22px;">You're Invited!</h2>
+            <p style="color: #64748b; font-size: 14px; margin: 0;">Join the team on InventoHub</p>
+          </div>
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px;">
+            <p style="color: #334155; font-size: 14px; line-height: 1.6; margin: 0 0 16px 0;">
+              You've been invited to join as <strong style="color: #6366f1;">${role}</strong>.
+              Click the button below to set up your account and get started.
+            </p>
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${inviteLink}"
+                 style="display: inline-block; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600; font-size: 14px; letter-spacing: 0.02em;">
+                Accept Invitation
+              </a>
+            </div>
+            <p style="color: #94a3b8; font-size: 12px; margin: 16px 0 0 0; text-align: center;">
+              This invitation expires in 48 hours.
+            </p>
+          </div>
+          <p style="color: #94a3b8; font-size: 12px; text-align: center; margin-top: 24px;">
+            If you didn't expect this invitation, you can safely ignore this email.
+          </p>
+        </div>
+      `,
+    });
+  } catch (emailError) {
+    console.error("Failed to send invite email:", emailError);
+    // Don't fail the invite if email fails — the link is still valid
+  }
 
-  res.json(new ApiResponse(200, "Invitation sent successfully"));
+  res.json(new ApiResponse(200, "Invitation sent successfully", { inviteLink }));
 
 });
 
@@ -408,10 +457,10 @@ export const AcceptInvite = asyncHandler(async (req: Request, res: Response) => 
     market_id: invite.market_id,
     customRole: invite.role,
     permissions: invite.permissions,
+    assignedShops_id: invite.assignedShops_id || [],
     createdBy: invite.invited_by,      //who invited (admin/manager) 
     status: "active",
     isActive: true,
-
   })
 
   invite.status = "accepted"

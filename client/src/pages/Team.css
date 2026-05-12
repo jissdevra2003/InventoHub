@@ -1,0 +1,959 @@
+/* ═══════════════════════════════════════════════════════════
+   Team Page Styles — Obsidian & Sapphire Dark Theme
+   (Matches Dashboard.css / Inventory.css design language)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Container ── */
+.team-container {
+    padding: 24px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 1400px;
+    min-height: 100%;
+}
+
+/* ── Header Row ── */
+.team-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.team-title {
+    font-size: 1.625rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    letter-spacing: -0.02em;
+}
+
+.team-header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.team-invite-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+}
+
+.team-invite-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
+}
+
+.team-invite-btn:active {
+    transform: translateY(0);
+}
+
+
+/* ── Stats Row ── */
+.team-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .team-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.team-stat-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.team-stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.3), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.team-stat-card:hover {
+    border-color: rgba(99, 102, 241, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(99, 102, 241, 0.1);
+}
+
+.team-stat-card:hover::before {
+    opacity: 1;
+}
+
+.team-stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.team-stat-info h4 {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--dash-text-secondary);
+    margin: 0 0 4px 0;
+}
+
+.team-stat-info p {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+
+/* ── Section Cards ── */
+.team-section-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.team-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.team-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.team-section-badge {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 20px;
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+
+/* ── Tables ── */
+.team-table-wrapper {
+    overflow-x: auto;
+}
+
+.team-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.team-table thead th {
+    text-align: left;
+    padding: 14px 24px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--dash-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--dash-border);
+    white-space: nowrap;
+    background: rgba(15, 23, 41, 0.5);
+}
+
+.team-table tbody tr {
+    transition: background 0.2s ease;
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.team-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.team-table tbody tr:hover {
+    background: var(--dash-surface-hover);
+}
+
+.team-table tbody td {
+    padding: 16px 24px;
+    white-space: nowrap;
+    color: var(--dash-text-secondary);
+}
+
+.team-table .name-cell {
+    font-weight: 600;
+    color: var(--dash-text) !important;
+}
+
+.team-table .email-cell {
+    color: var(--dash-text-secondary);
+    font-size: 0.8125rem;
+}
+
+.team-table .role-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 20px;
+    text-transform: capitalize;
+    white-space: nowrap;
+}
+
+.team-table .role-badge.role-admin {
+    background: rgba(99, 102, 241, 0.12);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.team-table .role-badge.role-manager {
+    background: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.team-table .role-badge.role-staff {
+    background: rgba(168, 85, 247, 0.12);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+.team-table .role-badge.role-custom {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+
+/* ── Status Badges ── */
+.team-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 14px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.team-status-badge.status-active {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.team-status-badge.status-invited {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.team-status-badge.status-disabled {
+    background: rgba(244, 63, 94, 0.12);
+    color: #fb7185;
+    border: 1px solid rgba(244, 63, 94, 0.25);
+}
+
+.team-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.team-status-dot.status-active { background: #34d399; }
+.team-status-dot.status-invited { background: #fbbf24; }
+.team-status-dot.status-disabled { background: #fb7185; }
+
+
+/* ── Action Buttons ── */
+.team-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    border-radius: 8px;
+    border: 1px solid var(--dash-border);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.team-action-btn.btn-revoke {
+    color: #fb7185;
+    border-color: rgba(244, 63, 94, 0.3);
+}
+
+.team-action-btn.btn-revoke:hover {
+    background: rgba(244, 63, 94, 0.1);
+    border-color: rgba(244, 63, 94, 0.5);
+}
+
+.team-action-btn.btn-enable {
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.team-action-btn.btn-enable:hover {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.5);
+}
+
+.team-action-btn.btn-disable {
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.team-action-btn.btn-disable:hover {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.5);
+}
+
+.team-action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+
+/* ── Invite Modal Overlay ── */
+.team-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 16px;
+}
+
+.team-modal {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 16px;
+    padding: 0;
+    width: 100%;
+    max-width: 600px;
+    max-height: 85vh;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.team-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid var(--dash-border);
+    flex-shrink: 0;
+}
+
+.team-modal-header h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    margin: 0;
+}
+
+.team-modal-close {
+    background: none;
+    border: none;
+    color: var(--dash-text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.team-modal-close:hover {
+    background: var(--dash-surface-hover);
+    color: var(--dash-text);
+}
+
+.team-modal-body {
+    padding: 24px 28px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.team-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 20px 28px;
+    border-top: 1px solid var(--dash-border);
+    flex-shrink: 0;
+}
+
+
+/* ── Form Fields ── */
+.team-form-group {
+    margin-bottom: 20px;
+}
+
+.team-form-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--dash-text-secondary);
+    margin-bottom: 6px;
+}
+
+.team-form-label .optional {
+    font-weight: 400;
+    color: var(--dash-text-muted);
+}
+
+.team-form-input,
+.team-form-select {
+    width: 100%;
+    background: var(--dash-bg);
+    border: 1px solid var(--dash-border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.875rem;
+    color: var(--dash-text);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+.team-form-input:focus,
+.team-form-select:focus {
+    border-color: var(--dash-accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.team-form-input::placeholder {
+    color: var(--dash-text-muted);
+}
+
+.team-form-select {
+    appearance: none;
+    cursor: pointer;
+    padding-right: 36px;
+}
+
+.team-form-select option {
+    background: var(--dash-surface);
+    color: var(--dash-text);
+}
+
+.team-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+
+/* ── Permission Checklist (Zoho-style) ── */
+.perm-section {
+    margin-bottom: 16px;
+}
+
+.perm-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(15, 23, 41, 0.5);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.perm-section-header:hover {
+    background: rgba(15, 23, 41, 0.7);
+}
+
+.perm-section-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    flex: 1;
+    text-transform: capitalize;
+}
+
+.perm-section-count {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--dash-text-muted);
+    background: var(--dash-surface-hover);
+    padding: 1px 8px;
+    border-radius: 10px;
+}
+
+.perm-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px 0 4px 12px;
+}
+
+.perm-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 8px;
+    border: 1px solid var(--dash-border);
+    background: transparent;
+    color: var(--dash-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.perm-chip:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    color: var(--dash-text);
+}
+
+.perm-chip.selected {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #818cf8;
+}
+
+.perm-chip .check-icon {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 1.5px solid var(--dash-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.perm-chip.selected .check-icon {
+    background: #6366f1;
+    border-color: #6366f1;
+}
+
+/* ── Select All Toggle ── */
+.perm-select-all {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    margin-bottom: 12px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid var(--dash-border);
+    background: transparent;
+    color: var(--dash-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.perm-select-all:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.perm-select-all.all-selected {
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: #818cf8;
+}
+
+
+/* ── Shop Chips (Multi-select) ── */
+.shop-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.shop-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    border-radius: 10px;
+    border: 1px solid var(--dash-border);
+    background: transparent;
+    color: var(--dash-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.shop-chip:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+.shop-chip.selected {
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #818cf8;
+}
+
+
+/* ── Modal Buttons ── */
+.team-modal-btn {
+    padding: 10px 24px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.team-modal-btn.cancel {
+    background: var(--dash-bg);
+    color: var(--dash-text-secondary);
+    border: 1px solid var(--dash-border);
+}
+
+.team-modal-btn.cancel:hover {
+    background: var(--dash-surface-hover);
+    color: var(--dash-text);
+}
+
+.team-modal-btn.confirm {
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    color: white;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+}
+
+.team-modal-btn.confirm:hover {
+    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
+    transform: translateY(-1px);
+}
+
+.team-modal-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+
+/* ── Empty State ── */
+.team-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+}
+
+.team-empty-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: rgba(99, 102, 241, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    color: var(--dash-accent);
+}
+
+.team-empty h3 {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    margin: 0 0 6px 0;
+}
+
+.team-empty p {
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted);
+    margin: 0;
+    max-width: 320px;
+}
+
+
+/* ── Pagination ── */
+.team-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-top: 1px solid var(--dash-border);
+}
+
+.team-pagination-info {
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted);
+}
+
+.team-pagination-btns {
+    display: flex;
+    gap: 8px;
+}
+
+.team-page-btn {
+    padding: 6px 14px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    border-radius: 8px;
+    border: 1px solid var(--dash-border);
+    background: transparent;
+    color: var(--dash-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.team-page-btn:hover:not(:disabled) {
+    border-color: rgba(99, 102, 241, 0.4);
+    color: var(--dash-text);
+}
+
+.team-page-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+
+/* ── Error Messages ── */
+.team-error-msg {
+    color: #fb7185;
+    font-size: 0.8125rem;
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: rgba(244, 63, 94, 0.08);
+    border: 1px solid rgba(244, 63, 94, 0.2);
+    border-radius: 8px;
+}
+
+.team-success-msg {
+    color: #34d399;
+    font-size: 0.8125rem;
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 8px;
+}
+
+
+/* ── Loading Skeleton ── */
+.team-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 24px;
+}
+
+.team-skeleton-row {
+    height: 48px;
+    background: linear-gradient(90deg, var(--dash-surface) 25%, var(--dash-surface-hover) 50%, var(--dash-surface) 75%);
+    background-size: 200% 100%;
+    animation: teamShimmer 1.5s infinite;
+    border-radius: 8px;
+}
+
+@keyframes teamShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+
+/* ── Toolbar (Search + Filter) ── */
+.team-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.team-search {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+    max-width: 400px;
+}
+
+.team-search input {
+    width: 100%;
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 10px;
+    padding: 10px 14px 10px 40px;
+    font-size: 0.875rem;
+    color: var(--dash-text);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+}
+
+.team-search input::placeholder {
+    color: var(--dash-text-muted);
+}
+
+.team-search input:focus {
+    border-color: var(--dash-accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.team-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--dash-text-muted);
+    pointer-events: none;
+}
+
+.team-role-filter {
+    display: flex;
+    gap: 4px;
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 10px;
+    padding: 4px;
+}
+
+.team-role-tab {
+    padding: 6px 16px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--dash-text-secondary);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.team-role-tab:hover {
+    color: var(--dash-text);
+    background: var(--dash-surface-hover);
+}
+
+.team-role-tab.active {
+    background: var(--dash-accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+
+/* ── Timestamp Cells ── */
+.team-table .date-cell {
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted) !important;
+}
+
+.team-table .shops-cell {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.team-shop-tag {
+    display: inline-flex;
+    padding: 2px 8px;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    border-radius: 6px;
+    background: rgba(56, 189, 248, 0.1);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+
+/* ── Background Glow ── */
+.team-container::before {
+    content: "";
+    position: fixed;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.team-container > * {
+    position: relative;
+    z-index: 1;
+}
+
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .team-container {
+        padding: 16px;
+        gap: 16px;
+    }
+
+    .team-title {
+        font-size: 1.375rem;
+    }
+
+    .team-table thead th,
+    .team-table tbody td {
+        padding: 12px 16px;
+    }
+
+    .team-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .team-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .team-modal {
+        max-height: 90vh;
+    }
+}

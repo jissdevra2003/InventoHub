@@ -7,7 +7,7 @@ import {
   ShoppingCart,
   BarChart3,
   Settings,
-  HelpCircle,
+  Users as UsersIcon,
   Boxes,
   LogOut,
   User as UserIcon,
@@ -27,7 +27,7 @@ const navItems = [
   { to: "/suppliers", label: "Shipments", icon: Truck },
   { to: "/products", label: "Analytics", icon: BarChart3 },
   { to: "/settings", label: "Settings", icon: Settings },
-  { to: "/users", label: "Support", icon: HelpCircle },
+  { to: "/users", label: "Team", icon: UsersIcon },
 ];
 
 export default function Sidebar() {
