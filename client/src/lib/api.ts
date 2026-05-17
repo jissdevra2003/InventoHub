@@ -4,7 +4,7 @@ import axios from "axios";
 // Localhost: baseURL is "" so Vite proxy forwards /api → localhost:10000.
 // Production: change to "https://inventohub-backend-20we.onrender.com"
 const api = axios.create({
-    baseURL: "http://localhost:10000",
+    baseURL: "https://inventohub-backend-20we.onrender.com",
     headers: {
         "Content-Type": "application/json",
     },
