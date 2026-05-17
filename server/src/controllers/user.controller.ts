@@ -200,8 +200,10 @@ export const Login = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(400, "Email and password are required");
   }
 
-  //find user by email and populate with market(organization details) in which organization the user works in 
-  const user = await User.findOne({ email }).populate("market_id", "market_name market_email");
+  //find user by email — select only fields needed for login checks + response
+  const user = await User.findOne({ email })
+    .select("email password isActive status role market_id")
+    .populate("market_id", "market_name market_email");
 
   if (!user) {
     throw new ApiError(401, "Invalid email address");
