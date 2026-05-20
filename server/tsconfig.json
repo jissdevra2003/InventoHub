@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "ignoreDeprecations": "5.0",
+    "ignoreDeprecations": "6.0",
     "module": "commonjs",
     "target": "es2020",
     "moduleResolution": "node",

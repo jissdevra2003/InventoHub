@@ -103,7 +103,7 @@ app.get('/api/health', (req: Request, res: Response) => {
 
 
 app.get('/', (req: Request, res: Response) => {
-  res.send('<h1>Welcome to123 InventoHub Server your one place to manage all inventory tasks!</h1>');
+  res.send('<h1>Welcome to InventoHub Server your one place to manage all inventory tasks!</h1>');
 });
 
 // ---------- ERROR HANDLING MIDDLEWARE ----------
