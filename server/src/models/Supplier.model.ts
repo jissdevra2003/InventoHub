@@ -41,6 +41,7 @@ export interface ISupplier extends Document {
   isActive: boolean;                // Soft delete (active/inactive)
 
   createdBy: Types.ObjectId;
+  
 
   createdAt?: Date;
   updatedAt?: Date;

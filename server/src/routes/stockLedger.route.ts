@@ -17,22 +17,22 @@ stockLedgerRouter.use(authMiddleware);
 
 // GET /api/stock-ledger/activity
 // Paginated audit trail — filterable by shop, product, change_type, date range
-stockLedgerRouter.get("/activity", rbac([PERMISSIONS.INVENTORY.READ]), getLedgerActivity);
+stockLedgerRouter.get("/activity", rbac([PERMISSIONS.INVENTORY.VIEW]), getLedgerActivity);
 
 // GET /api/stock-ledger/shrinkage
 // Shrinkage & loss report — negative stock_adjustments grouped by shop
-stockLedgerRouter.get("/shrinkage", rbac([PERMISSIONS.INVENTORY.READ]), getShrinkageReport);
+stockLedgerRouter.get("/shrinkage", rbac([PERMISSIONS.INVENTORY.VIEW]), getShrinkageReport);
 
 // GET /api/stock-ledger/velocity
 // Stock velocity / turnover — fastest and slowest selling products
-stockLedgerRouter.get("/velocity", rbac([PERMISSIONS.INVENTORY.READ]), getStockVelocity);
+stockLedgerRouter.get("/velocity", rbac([PERMISSIONS.INVENTORY.VIEW]), getStockVelocity);
 
 // GET /api/stock-ledger/flow
 // Inventory flow — total stock in vs. out per shop for a period
-stockLedgerRouter.get("/flow", rbac([PERMISSIONS.INVENTORY.READ]), getInventoryFlowSummary);
+stockLedgerRouter.get("/flow", rbac([PERMISSIONS.INVENTORY.VIEW]), getInventoryFlowSummary);
 
 // GET /api/stock-ledger/reorder-forecast
 // Smart reorder forecast — products that will run out soon based on sales velocity
-stockLedgerRouter.get("/reorder-forecast", rbac([PERMISSIONS.INVENTORY.READ]), getReorderForecast);
+stockLedgerRouter.get("/reorder-forecast", rbac([PERMISSIONS.INVENTORY.VIEW]), getReorderForecast);
 
 export default stockLedgerRouter;

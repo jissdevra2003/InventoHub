@@ -65,7 +65,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Apply the global rate limiter BEFORE the routes
-app.use(globalLimiter); 
+app.use(globalLimiter);
 
 // ---------- ROUTES ----------
 app.use('/api/auth', authLimiter, authRouter);    //auth routes

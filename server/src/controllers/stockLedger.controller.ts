@@ -21,7 +21,7 @@ const buildShopFilter = (user: NonNullable<Request["user"]>, shopId?: string) =>
             throw new ApiError(403, "Access denied for this shop.");
         }
         return { shop_id: new Types.ObjectId(shopId) };
-    }
+    }//below line can cause problem in final velocity report so check it ?
     return { shop_id: { $in: user.assignedShopsId.map((id: string) => new Types.ObjectId(id)) } };
 };
 
@@ -55,7 +55,6 @@ export const getLedgerActivity = asyncHandler(async (req: Request, res: Response
     const page = Math.max(parseInt(req.query.page as string) || 1, 1);
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
     const skip = (page - 1) * limit;
-
     const shopId = req.query.shopId as string | undefined;
     const productId = req.query.productId as string | undefined;
     const changeType = req.query.changeType as string | undefined;
@@ -182,10 +181,10 @@ export const getStockVelocity = asyncHandler(async (req: Request, res: Response)
     const user = req.user;
     if (!user) throw new ApiError(401, "Unauthorized");
 
-    const shopId    = req.query.shopId as string | undefined;
+    const shopId = req.query.shopId as string | undefined;
     const startDate = req.query.startDate as string | undefined;
-    const endDate   = req.query.endDate as string | undefined;
-    const limit     = Math.min(parseInt(req.query.limit as string) || 10, 50);
+    const endDate = req.query.endDate as string | undefined;
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
 
     const matchFilter: any = {
         market_id: new Types.ObjectId(user.marketId),
