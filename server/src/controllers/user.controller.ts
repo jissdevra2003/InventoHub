@@ -170,7 +170,7 @@ export const OwnerRegister = asyncHandler(async (req: Request, res: Response) =>
       cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000
       }).
       json(new ApiResponse(
@@ -238,7 +238,7 @@ export const Login = asyncHandler(async (req: Request, res: Response) => {
     .cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000
     })
     .json(
@@ -267,7 +267,7 @@ export const Logout = asyncHandler(async (req: Request, res: Response) => {
     .clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax"
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
     })
     .json(new ApiResponse(200, "Logged out successfully"));
 })
