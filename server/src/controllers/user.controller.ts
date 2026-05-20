@@ -17,14 +17,15 @@ import { sendEmail } from '../utils/sendEmail';
 
 
 
+const isProduction = process.env.NODE_ENV?.toLowerCase() === 'production';
+
 const generateToken = (user_id: string, market_id: string): string => {
   const tokenPayload = { user_id, market_id };
   // Generate JWT token with user_id and market_id
-  // Use a secret key from environment variables or a default value
   if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is not defined in environment variables");
   }
-  const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'nothing', { expiresIn: '7d' });
+  const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
   return token;
 }
@@ -169,14 +170,15 @@ export const OwnerRegister = asyncHandler(async (req: Request, res: Response) =>
       status(201).
       cookie("token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        path: "/",
         maxAge: 7 * 24 * 60 * 60 * 1000
       }).
       json(new ApiResponse(
         201,
         'Market and User registered successfully',
-        { userData, marketData }
+        { userData, marketData, token }
       ));
   } catch (error) {
     //ABORT transaction , Auto rollback
@@ -237,12 +239,14 @@ export const Login = asyncHandler(async (req: Request, res: Response) => {
     .status(200)
     .cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000
     })
     .json(
       new ApiResponse(200, "Login successful", {
+        token,
         user: {
           id: user._id,
           email: user.email,
@@ -266,8 +270,9 @@ export const Logout = asyncHandler(async (req: Request, res: Response) => {
     .status(200)
     .clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      path: "/"
     })
     .json(new ApiResponse(200, "Logged out successfully"));
 })

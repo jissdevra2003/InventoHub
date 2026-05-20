@@ -23,13 +23,21 @@ const useAuthStore = create<AuthState>((set) => ({
   // ── Log in ──
   login: async (email, password)=>{
     const res = await api.post("/api/users/login", { email, password });
-    set({ user: res.data.data.user });
+    const { token, user } = res.data.data;
+    if (token) {
+      localStorage.setItem("token", token);
+    }
+    set({ user });
   },
 
   // ── Log out ──
   logout: async () => {
-    await api.post("/api/users/logout");
-    set({ user: null });
+    try {
+      await api.post("/api/users/logout");
+    } finally {
+      localStorage.removeItem("token");
+      set({ user: null });
+    }
   },
 
   // ── Check session on page load / refresh ──
@@ -39,6 +47,7 @@ const useAuthStore = create<AuthState>((set) => ({
       const res = await api.get("/api/users/me");
       set({ user: res.data.data.user, isLoading: false });
     } catch {
+      localStorage.removeItem("token");
       set({ user: null, isLoading: false });
     }
   },

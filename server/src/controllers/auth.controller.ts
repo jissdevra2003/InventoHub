@@ -11,6 +11,8 @@ import { createTempToken, verifyTempToken } from '../utils/tempToken.utils';
 import { CompanyRegisterDto, UserRegisterDto } from '../dtos/auth.dto';
 
 
+const isProduction = process.env.NODE_ENV?.toLowerCase() === 'production';
+
 // Helper: generates the final auth token (same logic as in user.controller.ts)
 const generateToken = (user_id: string, market_id: string): string => {
   if (!process.env.JWT_SECRET) {
@@ -172,8 +174,9 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
       .status(201)
       .cookie("token", accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        path: "/",
         maxAge: 7 * 24 * 60 * 60 * 1000,    // 7 days
       })
       .json(

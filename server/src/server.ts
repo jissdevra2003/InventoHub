@@ -27,14 +27,26 @@ dotenv.config();
 
 const app: Express = express();
 const PORT: number = Number(process.env.PORT) || 3000;
+const isProduction = process.env.NODE_ENV?.toLowerCase() === 'production';
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://invento-hub-mfhu.vercel.app",
+  ...(process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim()).filter(Boolean)
+    : []),
+];
 
 // ---------- MIDDLEWARE ----------
 app.use(cors({
-  origin: [
-    "http://localhost:5173", 
-    "https://invento-hub-mfhu.vercel.app",
-    ...(process.env.CORS_ORIGIN ? [process.env.CORS_ORIGIN] : [])
-  ],
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("CORS origin not allowed"));
+  },
   credentials: true,
 }));
 app.use(express.json());

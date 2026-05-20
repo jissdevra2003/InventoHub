@@ -11,4 +11,18 @@ const api = axios.create({
     withCredentials: true, // send cookies (for JWT token in httpOnly cookie)
 });
 
+// Request Interceptor: Automatically inject the Bearer token if it exists in local storage
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem("token");
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
 export default api;
