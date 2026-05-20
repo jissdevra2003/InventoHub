@@ -21,6 +21,7 @@ import dashboardRouter from './routes/dashboard.route';
 import marketRouter from './routes/market.route';
 import transferRouter from './routes/transfer.route';
 import stockLedgerRouter from './routes/stockLedger.route';
+import inviteRouter from './routes/invite.route';
 
 dotenv.config();
 
@@ -29,7 +30,11 @@ const PORT: number = Number(process.env.PORT) || 3000;
 
 // ---------- MIDDLEWARE ----------
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || "https://invento-hub-mfhu.vercel.app",
+  origin: [
+    "http://localhost:5173", 
+    "https://invento-hub-mfhu.vercel.app",
+    ...(process.env.CORS_ORIGIN ? [process.env.CORS_ORIGIN] : [])
+  ],
   credentials: true,
 }));
 app.use(express.json());
@@ -80,6 +85,7 @@ app.use('/api/dashboard', dashboardRouter);       //dashboard routes
 app.use('/api/market', marketRouter);             //market routes
 app.use('/api/transfers', transferRouter);        //stock transfer routes
 app.use('/api/stock-ledger', stockLedgerRouter);  //stock ledger analytics routes
+app.use('/api/invites', inviteRouter);             //invite management routes
 
 
 // ---------- HEALTH CHECK ----------
@@ -108,6 +114,23 @@ app.use(notFoundHandler);
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+
+    // ---------- KEEP-ALIVE SELF-PING ----------
+    // Prevents free-tier hosts (Render, Railway) from spinning down the server
+    // after inactivity, which causes 2-3s cold start delays on next request.
+    // Pings own health endpoint every 4 minutes (well within the 15-min idle timeout).
+    if (process.env.NODE_ENV === 'production' && process.env.BACKEND_URL) {
+      const KEEP_ALIVE_INTERVAL = 4 * 60 * 1000; // 4 minutes
+      setInterval(async () => {
+        try {
+          await fetch(`${process.env.BACKEND_URL}/api/health`);
+          console.log("[keep-alive] pinged successfully");
+        } catch (err) {
+          console.warn("[keep-alive] ping failed:", (err as Error).message);
+        }
+      }, KEEP_ALIVE_INTERVAL);
+      console.log(`[keep-alive] enabled — pinging ${process.env.BACKEND_URL}/api/health every 4 min`);
+    }
   });
 })
   .catch((error) => {

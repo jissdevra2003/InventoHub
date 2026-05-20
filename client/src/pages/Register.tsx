@@ -2,10 +2,11 @@ import { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, ArrowLeft, CheckCircle2, Boxes, AlertCircle } from "lucide-react";
 
 import api from "../lib/api";
+import useAuthStore from "../stores/authStore";
 import {
     registerSchema,
     ownerSchema,
@@ -113,6 +114,8 @@ function StatusBanner({ status }: { status: { type: "success" | "error"; message
 export default function Register() {
 
     // ── State ──
+    const navigate = useNavigate();
+    const { login } = useAuthStore();
     const [currentStep, setCurrentStep] = useState(1);
     const [submitStatus, setSubmitStatus] = useState<{
         type: "success" | "error";
@@ -196,10 +199,9 @@ export default function Register() {
             // Single API call — backend creates Market + User atomically in one transaction
             await api.post("/api/users/register", { owner: ownerData, market: marketData });
 
-            setSubmitStatus({
-                type: "success",
-                message: "Registration successful! Your account and business have been created.",
-            });
+            // Auto-login with the same credentials, then redirect to dashboard
+            await login(data.owner.email, data.owner.password);
+            navigate("/dashboard");
 
         } catch (err: any) {
             console.error("Registration failed:", err);

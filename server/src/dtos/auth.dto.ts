@@ -44,9 +44,10 @@ export interface ForgotPasswordDto {
 }
 
 
-// Reset Password: user provides the token from the email + new password
+// Reset Password: user provides their email, the OTP they received, + new password
 export interface ResetPasswordDto {
-  token: string;
+  email: string;
+  otp: string;
   newPassword: string;
   confirmPassword: string;
 }

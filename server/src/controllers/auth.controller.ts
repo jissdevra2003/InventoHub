@@ -195,14 +195,14 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
 
 
 // ============================================
-// FORGOT PASSWORD
+// FORGOT PASSWORD — Send OTP
 // ============================================
-// Generates a reset token, saves it to the user record, and logs it.
-// In production you would send this token via email.
+// Generates a 6-digit OTP, saves it to the user record, and emails it.
 
 import crypto from 'crypto';
 import { forgotPasswordValidator, resetPasswordValidator } from '../validators/auth.validator';
 import { ForgotPasswordDto, ResetPasswordDto } from '../dtos/auth.dto';
+import { sendEmail } from '../utils/sendEmail';
 
 export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
 
@@ -221,35 +221,81 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response) =
   // Always return success to prevent email enumeration attacks
   if (!user) {
     return res.status(200).json(
-      new ApiResponse(200, "If an account with that email exists, a reset link has been sent.")
+      new ApiResponse(200, "If an account with that email exists, an OTP has been sent.")
     );
   }
 
-  // --- 3. Generate a reset token (random hex string) ---
-  const resetToken = crypto.randomBytes(32).toString("hex");
-  const tokenExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+  // --- 3. Generate a 6-digit OTP ---
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-  user.reset_token = resetToken;
-  user.reset_token_expiry = tokenExpiry;
+  // Store OTP in the existing reset_token field
+  user.reset_token = otp;
+  user.reset_token_expiry = otpExpiry;
   await user.save();
 
-  // --- 4. Log the token (email sending placeholder) ---
-  console.log("─────────────────────────────────────────────");
-  console.log(`📧 Password Reset Token for ${email}`);
-  console.log(`   Token  : ${resetToken}`);
-  console.log(`   Expires: ${tokenExpiry.toISOString()}`);
-  console.log("─────────────────────────────────────────────");
+  // --- 4. Send OTP via email ---
+  await sendEmail({
+    to: email,
+    subject: "InventoHub — Your Password Reset OTP",
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #f8fafc; border-radius: 12px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h2 style="color: #1e293b; margin: 0;">Password Reset</h2>
+          <p style="color: #64748b; font-size: 14px; margin-top: 8px;">Use the OTP below to reset your password</p>
+        </div>
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; text-align: center;">
+          <p style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #6366f1; margin: 0;">${otp}</p>
+          <p style="color: #94a3b8; font-size: 13px; margin-top: 12px;">This code expires in 15 minutes</p>
+        </div>
+        <p style="color: #94a3b8; font-size: 12px; text-align: center; margin-top: 24px;">
+          If you didn't request this, you can safely ignore this email.
+        </p>
+      </div>
+    `,
+  });
+
+  console.log(`📧 OTP sent to ${email}: ${otp}`); // dev log
 
   return res.status(200).json(
-    new ApiResponse(200, "If an account with that email exists, a reset link has been sent.")
+    new ApiResponse(200, "If an account with that email exists, an OTP has been sent.")
   );
 });
 
 
 // ============================================
-// RESET PASSWORD
+// VERIFY OTP (without resetting password)
 // ============================================
-// Verifies the reset token, checks expiry, and updates the password.
+// Checks if the email + OTP combo is valid. Used by step 2 in the
+// frontend to validate before advancing to the password form.
+
+export const verifyOtp = asyncHandler(async (req: Request, res: Response) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    throw new ApiError(400, "Email and OTP are required.");
+  }
+
+  const user = await User.findOne({
+    email,
+    reset_token: otp,
+    reset_token_expiry: { $gt: new Date() },
+  });
+
+  if (!user) {
+    throw new ApiError(400, "Invalid or expired OTP. Please request a new one.");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, "OTP verified successfully.")
+  );
+});
+
+
+// ============================================
+// RESET PASSWORD — Verify OTP & Update
+// ============================================
+// Verifies the OTP, checks expiry, and updates the password.
 
 export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
 
@@ -260,16 +306,17 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
     throw new ApiError(400, `Validation error: ${errors.join(", ")}`);
   }
 
-  const { token, newPassword }: ResetPasswordDto = result.data;
+  const { email, otp, newPassword }: ResetPasswordDto = result.data;
 
-  // --- 2. Find user by reset token ---
+  // --- 2. Find user by email + OTP ---
   const user = await User.findOne({
-    reset_token: token,
-    reset_token_expiry: { $gt: new Date() },  // token must not be expired
+    email,
+    reset_token: otp,
+    reset_token_expiry: { $gt: new Date() },  // OTP must not be expired
   });
 
   if (!user) {
-    throw new ApiError(400, "Invalid or expired reset token. Please request a new one.");
+    throw new ApiError(400, "Invalid or expired OTP. Please request a new one.");
   }
 
   // --- 3. Update password (pre-save hook will hash it) ---
@@ -282,3 +329,4 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
     new ApiResponse(200, "Password reset successfully. You can now log in with your new password.")
   );
 });
+

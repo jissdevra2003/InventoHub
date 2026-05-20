@@ -1,5 +1,5 @@
 import express from "express";
-import { registerCompany, registerUser, forgotPassword, resetPassword } from "../controllers/auth.controller";
+import { registerCompany, registerUser, forgotPassword, verifyOtp, resetPassword } from "../controllers/auth.controller";
 
 const authRouter = express.Router();
 
@@ -22,6 +22,9 @@ authRouter.post("/register/user", registerUser);
 // ============================================
 // POST /api/auth/forgot-password
 authRouter.post("/forgot-password", forgotPassword);
+
+// POST /api/auth/verify-otp
+authRouter.post("/verify-otp", verifyOtp);
 
 // POST /api/auth/reset-password
 authRouter.post("/reset-password", resetPassword);

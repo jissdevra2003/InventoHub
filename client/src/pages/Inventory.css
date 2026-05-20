@@ -1,0 +1,669 @@
+/* ═══════════════════════════════════════════════════════════
+   Inventory Styles — Obsidian & Sapphire Dark Theme
+   (Matches Dashboard.css design language)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Container ── */
+.inventory-container {
+    padding: 24px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 1400px;
+    min-height: 100%;
+}
+
+
+/* ── Header Row ── */
+.inventory-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.inventory-title {
+    font-size: 1.625rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    letter-spacing: -0.02em;
+}
+
+
+/* ── Shop Selector ── */
+.shop-selector {
+    position: relative;
+    min-width: 220px;
+}
+
+.shop-selector select {
+    width: 100%;
+    appearance: none;
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 10px;
+    padding: 10px 40px 10px 14px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--dash-text);
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+}
+
+.shop-selector select:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+.shop-selector select:focus {
+    border-color: var(--dash-accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.shop-selector option {
+    background: var(--dash-surface);
+    color: var(--dash-text);
+}
+
+.shop-selector-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--dash-text-muted);
+}
+
+
+/* ── Stats Grid ── */
+.inventory-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+@media (max-width: 1024px) {
+    .inventory-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .inventory-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.inventory-stat-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.inventory-stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.3), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.inventory-stat-card:hover {
+    border-color: rgba(99, 102, 241, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(99, 102, 241, 0.1);
+}
+
+.inventory-stat-card:hover::before {
+    opacity: 1;
+}
+
+.inventory-stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.inventory-stat-info h4 {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--dash-text-secondary);
+    margin: 0 0 4px 0;
+}
+
+.inventory-stat-info p {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+
+/* ── Toolbar (Search + Filter) ── */
+.inventory-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.inventory-search {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+    max-width: 400px;
+}
+
+.inventory-search input {
+    width: 100%;
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 10px;
+    padding: 10px 14px 10px 40px;
+    font-size: 0.875rem;
+    color: var(--dash-text);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+}
+
+.inventory-search input::placeholder {
+    color: var(--dash-text-muted);
+}
+
+.inventory-search input:focus {
+    border-color: var(--dash-accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.inventory-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--dash-text-muted);
+    pointer-events: none;
+}
+
+
+/* ── Status Filter Tabs ── */
+.status-filter-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 10px;
+    padding: 4px;
+}
+
+.status-filter-tab {
+    padding: 6px 16px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--dash-text-secondary);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.status-filter-tab:hover {
+    color: var(--dash-text);
+    background: var(--dash-surface-hover);
+}
+
+.status-filter-tab.active {
+    background: var(--dash-accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+
+/* ── Inventory Table Card ── */
+.inventory-table-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.inventory-table-wrapper {
+    overflow-x: auto;
+}
+
+.inventory-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.inventory-table thead th {
+    text-align: left;
+    padding: 14px 24px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--dash-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--dash-border);
+    white-space: nowrap;
+    background: rgba(15, 23, 41, 0.5);
+}
+
+.inventory-table tbody tr {
+    transition: background 0.2s ease;
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.inventory-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.inventory-table tbody tr:hover {
+    background: var(--dash-surface-hover);
+}
+
+.inventory-table tbody td {
+    padding: 16px 24px;
+    white-space: nowrap;
+    color: var(--dash-text-secondary);
+}
+
+.inventory-table .product-name {
+    font-weight: 600;
+    color: var(--dash-text) !important;
+}
+
+.inventory-table .sku {
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted);
+}
+
+.inventory-table .quantity {
+    font-weight: 600;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    color: var(--dash-text);
+}
+
+.inventory-table .price {
+    font-weight: 500;
+    color: var(--dash-text-secondary);
+}
+
+
+/* ── Status Badges ── */
+.inv-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 14px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.inv-status-badge.in-stock {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.inv-status-badge.low-stock {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.inv-status-badge.out-of-stock {
+    background: rgba(244, 63, 94, 0.12);
+    color: #fb7185;
+    border: 1px solid rgba(244, 63, 94, 0.25);
+}
+
+.inv-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.inv-status-dot.in-stock { background: #34d399; }
+.inv-status-dot.low-stock { background: #fbbf24; }
+.inv-status-dot.out-of-stock { background: #fb7185; }
+
+
+/* ── Action Buttons ── */
+.inv-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    border-radius: 8px;
+    border: 1px solid var(--dash-border);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.inv-action-btn.stock-in {
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.inv-action-btn.stock-in:hover {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.5);
+}
+
+.inv-action-btn.stock-out {
+    color: #fb7185;
+    border-color: rgba(244, 63, 94, 0.3);
+}
+
+.inv-action-btn.stock-out:hover {
+    background: rgba(244, 63, 94, 0.1);
+    border-color: rgba(244, 63, 94, 0.5);
+}
+
+
+/* ── Modal Overlay ── */
+.inv-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.inv-modal {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+}
+
+.inv-modal-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    margin: 0 0 4px 0;
+}
+
+.inv-modal-subtitle {
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted);
+    margin: 0 0 24px 0;
+}
+
+.inv-modal-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--dash-text-secondary);
+    margin: 0 0 6px 0;
+    display: block;
+}
+
+.inv-modal-input {
+    width: 100%;
+    background: var(--dash-bg);
+    border: 1px solid var(--dash-border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.875rem;
+    color: var(--dash-text);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+.inv-modal-input:focus {
+    border-color: var(--dash-accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.inv-modal-input::placeholder {
+    color: var(--dash-text-muted);
+}
+
+.inv-modal-textarea {
+    resize: vertical;
+    min-height: 72px;
+}
+
+.inv-modal-current {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--dash-bg);
+    border: 1px solid var(--dash-border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+}
+
+.inv-modal-current-label {
+    font-size: 0.8125rem;
+    color: var(--dash-text-secondary);
+}
+
+.inv-modal-current-value {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+}
+
+.inv-modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.inv-modal-btn {
+    flex: 1;
+    padding: 10px 16px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.inv-modal-btn.cancel {
+    background: var(--dash-bg);
+    color: var(--dash-text-secondary);
+    border: 1px solid var(--dash-border);
+}
+
+.inv-modal-btn.cancel:hover {
+    background: var(--dash-surface-hover);
+    color: var(--dash-text);
+}
+
+.inv-modal-btn.confirm-in {
+    background: #10b981;
+    color: white;
+}
+
+.inv-modal-btn.confirm-in:hover {
+    background: #059669;
+}
+
+.inv-modal-btn.confirm-out {
+    background: #f43f5e;
+    color: white;
+}
+
+.inv-modal-btn.confirm-out:hover {
+    background: #e11d48;
+}
+
+.inv-modal-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* ── Empty State ── */
+.inventory-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 24px;
+    text-align: center;
+}
+
+.inventory-empty-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: rgba(99, 102, 241, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    color: var(--dash-accent);
+}
+
+.inventory-empty h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    margin: 0 0 6px 0;
+}
+
+.inventory-empty p {
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted);
+    margin: 0;
+    max-width: 320px;
+}
+
+
+/* ── Low Stock Alert Banner ── */
+.low-stock-alert {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 12px;
+    padding: 12px 20px;
+}
+
+.low-stock-alert-icon {
+    color: #fbbf24;
+    flex-shrink: 0;
+}
+
+.low-stock-alert p {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #fbbf24;
+    margin: 0;
+}
+
+.low-stock-alert strong {
+    font-weight: 700;
+}
+
+
+/* ── Loading Skeleton ── */
+.inventory-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 24px;
+}
+
+.skeleton-row {
+    height: 48px;
+    background: linear-gradient(90deg, var(--dash-surface) 25%, var(--dash-surface-hover) 50%, var(--dash-surface) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+
+/* ── Background Glow ── */
+.inventory-container::before {
+    content: "";
+    position: fixed;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.inventory-container > * {
+    position: relative;
+    z-index: 1;
+}
+
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .inventory-container {
+        padding: 16px;
+        gap: 16px;
+    }
+
+    .inventory-title {
+        font-size: 1.375rem;
+    }
+
+    .inventory-table thead th,
+    .inventory-table tbody td {
+        padding: 12px 16px;
+    }
+
+    .inventory-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+@media (max-width: 640px) {
+    .status-filter-tabs {
+        overflow-x: auto;
+    }
+}

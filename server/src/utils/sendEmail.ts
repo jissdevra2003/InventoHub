@@ -1,4 +1,4 @@
-import { mailTransporter } from "./mail";
+import { getMailTransporter } from "./mail";
 
 
 
@@ -11,7 +11,7 @@ interface SendEmailOptions
 
 export const sendEmail=async ({to,subject,html}:SendEmailOptions)=>{
 
-    await mailTransporter.sendMail({
+    await getMailTransporter().sendMail({
         from:`"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_EMAIL}>`,
         to,
         subject,
