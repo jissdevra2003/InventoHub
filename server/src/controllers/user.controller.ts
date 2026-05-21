@@ -10,6 +10,7 @@ import { ALL_PERMISSIONS } from '../permissions/main.perm';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import crypto from 'crypto'
+import bcrypt from 'bcrypt'
 import { Invite } from '../models/Invite.model';
 import { Shop } from '../models/Shop.model';
 import { canUpdateUser } from '../utils/userAccess';
@@ -202,10 +203,11 @@ export const Login = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(400, "Email and password are required");
   }
 
-  //find user by email — select only fields needed for login checks + response
+  // Optimize: use lean() to skip heavy Mongoose document instantiation
   const user = await User.findOne({ email })
     .select("email password isActive status role market_id")
-    .populate("market_id", "market_name market_email");
+    .populate("market_id", "market_name market_email")
+    .lean() as any;
 
   if (!user) {
     throw new ApiError(401, "Invalid email address");
@@ -223,16 +225,15 @@ export const Login = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(401, "Password not set for this account");
   }
 
-  //if await is not used here then it returns a pending promise. so if pass is correct or wrong still it will be a promise which will act as truthy value and user will be able to login incorrect password
-  const isMatch = await user.comparePasswords(password)
+  // Compare passwords directly since user is a lean object and doesn't have methods
+  const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
     throw new ApiError(401, "Invalid password");
   }
 
   const token = generateToken(
     user._id.toString(),
-    user.market_id._id.toString()
-
+    (user.market_id as any)._id.toString()
   )
 
   return res
