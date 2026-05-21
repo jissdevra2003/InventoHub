@@ -7,6 +7,7 @@ import Team from "./pages/Team";
 import AcceptInvite from "./pages/AcceptInvite";
 import ForgotPassword from "./pages/ForgotPassword";
 import PlaceholderPage from "./pages/PlaceholderPage";
+import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AppLayout from "./components/layout/AppLayout";
 
@@ -34,6 +35,7 @@ function App() {
           <Route path="/sales-orders" element={<PlaceholderPage title="Sales Orders" description="Process and track sales orders. Monitor revenue and order fulfillment." />} />
           <Route path="/users" element={<Team />} />
           <Route path="/settings" element={<PlaceholderPage title="Settings" description="Configure your account, business preferences, and application settings." />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
       </Route>
 

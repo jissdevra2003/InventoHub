@@ -49,6 +49,11 @@ export const registerValidator = z.object({
 });
 
 export const updateMeValidator = z.object({
+  username: z
+    .string()
+    .regex(/^[a-zA-Z0-9_]{3,30}$/, "Username must be 3-30 characters (letters, numbers, underscores)")
+    .optional(),
+
   name: z
     .string()
     .min(3, "Name must be at least 3 characters")

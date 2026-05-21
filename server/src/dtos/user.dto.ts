@@ -31,6 +31,7 @@ export interface registerDto {
 }
 
 export interface updateMyProfileDto {
+  username?: string;
   name?: string;
   phone?: string;
   address?: string;

@@ -7,6 +7,14 @@ import type { User } from "@/types/api.types";
 // ProtectedRoute, permission checks). Zustand makes it available globally
 // without passing props through every component.
 
+interface UpdateProfileData {
+  username?: string;
+  name?: string;
+  phone?: string;
+  address?: string;
+  profile_image?: string;
+}
+
 interface AuthState {
   user: User | null; // null = not logged in
   isLoading: boolean; // true while checking session on page load
@@ -14,9 +22,10 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
+  updateProfile: (data: UpdateProfileData) => Promise<void>;
 }
 
-const useAuthStore = create<AuthState>((set) => ({
+const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isLoading: true, // starts true — we check the session before rendering
 
@@ -51,6 +60,19 @@ const useAuthStore = create<AuthState>((set) => ({
       set({ user: null, isLoading: false });
     }
   },
+
+  // ── Update own profile ──
+  // Calls PATCH /api/users/update-me and merges the result into the store
+  // so Topbar/Sidebar reflect changes immediately.
+  updateProfile: async (data: UpdateProfileData) => {
+    const res = await api.patch("/api/users/update-me", data);
+    const updatedFields = res.data.data.user;
+    const currentUser = get().user;
+    if (currentUser) {
+      set({ user: { ...currentUser, ...updatedFields } });
+    }
+  },
 }));
 
 export default useAuthStore;
+

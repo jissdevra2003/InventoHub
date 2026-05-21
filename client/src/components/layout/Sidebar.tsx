@@ -160,14 +160,22 @@ export default function Sidebar() {
           gap: 12,
         }}
       >
-        {/* User info */}
+        {/* User info — clickable → Profile page */}
         <div
+          onClick={() => navigate("/profile")}
           style={{
             display: "flex",
             alignItems: "center",
             gap: 12,
             padding: "8px",
+            cursor: "pointer",
+            borderRadius: 10,
+            transition: "background 0.2s ease",
           }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(99, 102, 241, 0.08)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+          role="button"
+          aria-label="Go to profile"
         >
           <div
             style={{

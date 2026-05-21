@@ -1,4 +1,5 @@
 import { Bell, User as UserIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/stores/authStore";
 
 // ─── Top Bar ───
@@ -7,6 +8,7 @@ import useAuthStore from "@/stores/authStore";
 
 export default function Topbar() {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
 
   return (
     <header
@@ -42,34 +44,38 @@ export default function Topbar() {
         <Bell size={20} />
       </button>
 
-      {/* User avatar + name */}
+      {/* User avatar + name — clickable → Profile page */}
       <div
+        onClick={() => navigate("/profile")}
         style={{
           display: "flex",
           alignItems: "center",
           gap: 10,
+          cursor: "pointer",
+          padding: "4px 8px",
+          borderRadius: 10,
+          transition: "background 0.2s ease",
         }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(99, 102, 241, 0.08)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+        role="button"
+        aria-label="Go to profile"
       >
-        <button
+        <div
           style={{
             width: 36,
             height: 36,
             borderRadius: "50%",
             background: "linear-gradient(135deg, #6366f1, #818cf8)",
             border: "2px solid #1e2d4a",
-            cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: 0,
             transition: "border-color 0.2s ease",
           }}
-          aria-label="User profile"
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#6366f1"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#1e2d4a"; }}
         >
           <UserIcon size={16} color="#ffffff" />
-        </button>
+        </div>
         <span
           style={{
             fontSize: "0.875rem",

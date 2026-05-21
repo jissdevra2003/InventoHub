@@ -627,12 +627,23 @@ export const UpdateMyProfile = asyncHandler(async (req: Request, res: Response) 
     throw new ApiError(400, "No fields provided to update");
   }
 
+  // Check username uniqueness if username is being updated
+  if (updatedData.username) {
+    const existingUsername = await User.findOne({
+      username: updatedData.username,
+      _id: { $ne: loggedInUser.userId },
+    });
+    if (existingUsername) {
+      throw new ApiError(409, "Username already taken");
+    }
+  }
+
   const updatedUser = await User.findByIdAndUpdate(
     loggedInUser.userId,
     { $set: updatedData },
     { new: true }
   ).select(
-    "_id name email phone address profile_image builtInRole createdAt")
+    "_id username name email phone address profile_image builtInRole createdAt")
 
   if (!updatedUser) {
     throw new ApiError(404, "User not found")

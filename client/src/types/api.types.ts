@@ -18,6 +18,7 @@ export interface User {
   assignedShops_id?: string[];
   market_id: string;
   profile_image?: string;
+  address?: string;
   isActive: boolean;
   status: "invited" | "active" | "disabled";
 }
