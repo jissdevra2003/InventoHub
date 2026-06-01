@@ -204,6 +204,7 @@ export const Login = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Optimize: use lean() to skip heavy Mongoose document instantiation
+  //lean() method return plain javascript object
   const user = await User.findOne({ email })
     .select("email password isActive status role market_id")
     .populate("market_id", "market_name market_email")
